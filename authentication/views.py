@@ -45,9 +45,6 @@ class LoginAPIView(APIView):
             user1 = User.objects.get(email__iexact = request_email)
         except: 
             return Response({'status':'User not registered'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        # if user1.is_seller is True:
-        #     return Response({"status": "You cannot login with merchant email."}, status=status.HTTP_400_BAD_REQUEST)
 
         if user1.is_active is True:
             serializer = AuthTokenSerializer(data=request.data, context={'request': request})
@@ -189,44 +186,10 @@ class SignUpOTPVerification(APIView):
                 user.save()
 
                 return Response(user.tokens(), status=status.HTTP_200_OK)
-                # return Response({
-                #     'status':'OTP verified, proceed to login.'
-                # }, status=status.HTTP_200_OK)
             else:
                 return Response({
                     'status':'OTP incorrect.'
                 }, status=status.HTTP_400_BAD_REQUEST)
-
-# class ManageUserView(generics.RetrieveUpdateAPIView):
-#     """Manage the authenticated user"""
-#     serializer_class = UserSerializer
-
-#     def get_object(self):
-#         """Retrieve and return authentication user"""
-#         return self.request.user
-
-# class ChangePassword(APIView):
-#     permission_classes = [AllowAny] 
-#     serializer_class = UserSerializer
-#     def post(self, request, *args, **kwargs):
-#         request_email = request.data.get('email', )
-#         request_password = request.data.get('password', )
-
-#         request_name = request.data.get('name', )
-#         serializer = self.serializer_class(data=request.data)
-#         try:
-#             user = User.objects.get(email = request_email)
-#         except:
-#             return Response({'status': 'Given email is not registered.'}, status=status.HTTP_408_REQUEST_TIMEOUT)
-
-        # if check_password(request_password, user.password) is not True:
-#             if user.is_active is True:
-#                 if serializer.is_valid():
-#                     serializer.save()
-#                     return Response({'status' : 'User password changed successfully.'})
-#                 return Response({"status": "Invalid details."})
-#             return Response({'status': 'User is not verified.'}, status= status.HTTP_401_UNAUTHORIZED)
-#         return Response({'status': 'New Password cannot be the same as Old Password.'}, status= status.HTTP_406_NOT_ACCEPTABLE)
             
 class ChangePassword(APIView):
     permission_classes = (AllowAny, )

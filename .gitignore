@@ -5,3 +5,5 @@
 !.elasticbeanstalk/*.global.yml
 suyashsingh101_accessKeys.csv
 suyashsingh101_codecommit_credentials.csv
+django-aws.ppk
+media/
