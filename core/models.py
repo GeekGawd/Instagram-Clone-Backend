@@ -2,7 +2,7 @@ import re
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,PermissionsMixin
-from django.db.models.fields import CharField
+from django.db.models.fields import BooleanField, CharField
 from django.db.models.fields.related import OneToOneField
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -32,8 +32,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    profile_photo = models.ImageField(null=True)
-    bio = CharField(max_length=150, null=True)
+    profile_photo = models.ImageField(blank = True, default="default-user-icon-13.jpg")
+    bio = CharField(max_length=150, null=True, blank=True)
 
     objects = UserManager()
 

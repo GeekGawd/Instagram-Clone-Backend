@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'name')
+        fields = ('email', 'password', 'name', 'profile_photo', 'bio')
         extra_kwargs = {'password': {'write_only': True, 'min_length': 5,'required': True, 'error_messages': {"required": "Password needed"}},
             'email': {'required': True,'error_messages': {"required": "Email field may not be blank."}},
             'name': {'required': True,'error_messages': {"required": "Name field may not be blank."}},

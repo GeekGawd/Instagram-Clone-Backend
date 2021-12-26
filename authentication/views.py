@@ -1,41 +1,17 @@
-from re import S
 from rest_framework import generics, serializers, status, authentication, permissions
-from django.shortcuts import redirect, resolve_url, reverse
 from core.models import *
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
-from authentication.serializers import LoginSerializer, UserSerializer, AuthTokenSerializer, ChangePasswordSerializer
-from django.core.mail import send_mail, EmailMessage
-import random, time, datetime
+import time, random
+from authentication.serializers import AuthTokenSerializer, ChangePasswordSerializer, UserSerializer
+from django.core.mail import EmailMessage
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import Http404
-from django.utils import timezone
-from django.contrib.auth import authenticate
-import jwt
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 from django.conf import settings
-
-class CreateUserView(APIView):
-    serializer_class = UserSerializer
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        name = request.data.get('name',)
-        request.data['name'] = name.strip().title()
-        serializer = self.serializer_class(data=request.data)
-        request_email = request.data.get('email',)
-        try:
-             user = User.objects.get(email__iexact = request_email)
-        except:
-            if serializer.is_valid():
-                serializer.save()
-                login_send_otp_email(request_email, signup_otp = True)
-                return Response({'status' : 'User registered successfully and an OTP has been sent to your email.'}, status=status.HTTP_201_CREATED)
-            return Response({'status' : 'Registration was not successful. Please enter the details carefully.'}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        return Response({'status' : 'Entered email is already registered.'}, status=status.HTTP_403_FORBIDDEN)
         
+class CreateUserView(generics.CreateAPIView):
+    serializer_class = UserSerializer
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
