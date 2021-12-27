@@ -22,14 +22,9 @@ class LoginAPIView(APIView):
         except: 
             return Response({'status':'User not registered'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        if user1.is_active is True:
-            serializer = AuthTokenSerializer(data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'status':'User not validated, please goto login/otp'
-            },status=status.HTTP_403_FORBIDDEN)
+        serializer = AuthTokenSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 def login_send_otp_email(email,subject="[OTP] New Login for Connect App"):
     
