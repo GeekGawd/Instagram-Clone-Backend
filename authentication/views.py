@@ -43,9 +43,7 @@ def login_send_otp_email(email,subject="[OTP] New Login for Connect App"):
 
         time_created = int(time.time())
         OTP.objects.create(otp=otp, otp_email = email, time_created = time_created)
-
-
-
+        
         return Response({"OTP has been successfully sent to your email."})
 
 def send_otp_email(email,subject):
@@ -136,29 +134,25 @@ class SignUpOTPVerification(APIView):
         if request_email:
             try:
                 otp_instance = OTP.objects.get(otp_email__iexact = request_email)
-                user = User.objects.get(email__iexact = request_email)
             except:
                 raise Http404
             
-            otp = otp_instance.otp
-            email = otp_instance.otp_email
+        otp = otp_instance.otp
+        email = otp_instance.otp_email
 
-            request_time = OTP.objects.get(otp_email__iexact = request_email).time_created
-            current_time = int(time.time())
+        request_time = OTP.objects.get(otp_email__iexact = request_email).time_created
+        current_time = int(time.time())
 
-            if current_time - request_time > 300:
-                return Response({"status" : "Sorry, entered OTP has expired."}, status = status.HTTP_403_FORBIDDEN)
-            
-            if str(request_otp) == str(otp) and request_email == email:
-                OTP.objects.filter(otp_email__iexact = request_email).delete()
-                user.is_active = True
-                user.save()
-
-                return Response(user.tokens(), status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    'status':'OTP incorrect.'
-                }, status=status.HTTP_400_BAD_REQUEST)
+        if current_time - request_time > 300:
+            return Response({"status" : "Sorry, entered OTP has expired."}, status = status.HTTP_403_FORBIDDEN)
+        
+        if str(request_otp) == str(otp) and request_email == email:
+            OTP.objects.filter(otp_email__iexact = request_email).delete()
+            return Response({"status": "Email Verified."}, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status':'OTP incorrect.'
+            }, status=status.HTTP_400_BAD_REQUEST)
             
 class ChangePassword(APIView):
     permission_classes = (AllowAny, )
