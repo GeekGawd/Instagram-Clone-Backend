@@ -55,7 +55,7 @@ def send_otp_email(email,subject):
 
     OTP.objects.create(otp=otp, otp_email = email, time_created = time_created)
 
-class PasswordReset(APIView):
+class PasswordResetOTP(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -98,9 +98,7 @@ class PasswordResetOTPConfirm(APIView):
             if (request_email != email):
                 return Response({"status" : "Sorry, entered OTP doesn't belong to your email id."},status = status.HTTP_401_UNAUTHORIZED)
             
-            serializer = AuthTokenSerializer(data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({"status": "OTP has been verified."}, status=status.HTTP_200_OK)
 
         return Response({"status": "Please Provide an email address"},status = status.HTTP_400_BAD_REQUEST)
 

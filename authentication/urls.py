@@ -10,7 +10,7 @@ urlpatterns = [
 
     path('login/', views.LoginAPIView.as_view(), name='login'),
 
-    path('reset/', views.PasswordReset.as_view(), name='passwordreset'),
+    path('reset/', views.PasswordResetOTP.as_view(), name='passwordreset'),
 
     path('reset/verify/', views.PasswordResetOTPConfirm.as_view(), name='passwordresetconfirmation'),
 
