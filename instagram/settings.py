@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from typing import cast
 from decouple import config
 import os
 
@@ -82,26 +83,30 @@ WSGI_APPLICATION = 'instagram.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': config("POSTGRES_NAME"),
-#         'USER': config("POSTGRES_USER"),
-#         'PASSWORD': config("POSTGRES_PASSWORD"),
-#         'HOST': "127.0.0.1",
-#         'PORT': config("POSTGRES_PORT"),
-#     }
-# }
 
-DATABASES = {
+ON_HEROKU = config("ON_HEROKU", cast=bool)
+
+if ON_HEROKU:
+    DATABASES = {
+        'default': {
+            'ENGINE':'django.db.backends.postgresql_psycopg2',
+        }
+    }
+    import dj_database_url
+    db_from_env = dj_database_url.config(conn_max_age=600)
+    DATABASES['default'].update(db_from_env)
+
+else:
+    DATABASES = {
     'default': {
-        'ENGINE':'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config("POSTGRES_NAME"),
+        'USER': config("POSTGRES_USER"),
+        'PASSWORD': config("POSTGRES_PASSWORD"),
+        'HOST': "127.0.0.1",
+        'PORT': config("POSTGRES_PORT"),
     }
 }
-import dj_database_url
-db_from_env = dj_database_url.config(conn_max_age=600)
-DATABASES['default'].update(db_from_env)
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

@@ -75,9 +75,8 @@ class PasswordReset(APIView):
 class PasswordResetOTPConfirm(APIView):
     permission_classes = [AllowAny]
     def post(self,request):
-        data = request.data
-        request_otp   = data.get("otp",)
-        request_email = data.get("email",)
+        request_otp   = request.data.get("otp",)
+        request_email = request.data.get("email",)
 
         if request_email:
             try:
@@ -110,7 +109,10 @@ class SignUpOTP(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         request_email = request.data.get("email",)
-
+        try:
+            user = User.objects.get(email__iexact = request_email)
+        except:
+            return Response({"status": "User is already registered."}, status==status.HTTP_403_FORBIDDEN)
         if request_email:
             try:
                 login_send_otp_email(email=request_email)
@@ -151,7 +153,6 @@ class SignUpOTPVerification(APIView):
             
 class ChangePassword(APIView):
     permission_classes = (AllowAny, )
-
 
     def patch(self, request, *args, **kwargs):
         request_email = request.data.get('email',)
