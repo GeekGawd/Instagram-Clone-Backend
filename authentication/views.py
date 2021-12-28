@@ -111,16 +111,16 @@ class SignUpOTP(APIView):
         request_email = request.data.get("email",)
         try:
             user = User.objects.get(email__iexact = request_email)
+            return Response({"status": "User is already registered."}, status=status.HTTP_403_FORBIDDEN)
         except:
-            return Response({"status": "User is already registered."}, status==status.HTTP_403_FORBIDDEN)
-        if request_email:
-            try:
-                login_send_otp_email(email=request_email)
-                return Response({'status':'OTP sent successfully.'},status = status.HTTP_200_OK)
-            except:
-                return Response({'status':"Couldn't send otp."}, status = status.HTTP_405_METHOD_NOT_ALLOWED)
-        else:
-            return Response({"status":"Please enter an email id"},status = status.HTTP_400_BAD_REQUEST)
+            if request_email:
+                try:
+                    login_send_otp_email(email=request_email)
+                    return Response({'status':'OTP sent successfully.'},status = status.HTTP_200_OK)
+                except:
+                    return Response({'status':"Couldn't send otp."}, status = status.HTTP_405_METHOD_NOT_ALLOWED)
+            else:
+                return Response({"status":"Please enter an email id"},status = status.HTTP_400_BAD_REQUEST)
                 
 class SignUpOTPVerification(APIView):
     permission_classes = [AllowAny]
@@ -156,6 +156,7 @@ class ChangePassword(APIView):
 
     def patch(self, request, *args, **kwargs):
         request_email = request.data.get('email',)
+
         try:   
             user = User.objects.get(email__iexact = request_email)
         except:
