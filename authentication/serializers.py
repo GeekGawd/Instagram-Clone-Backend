@@ -113,26 +113,3 @@ class AuthTokenSerializer(serializers.ModelSerializer):
             'refresh': user.refresh,
             'access': user.access,
         }
-
-
-
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length = 255, min_length = 9)
-    password = serializers.CharField(style={'input_type': 'password'},trim_whitespace=False, write_only=True)
-
-    def validate(self, attrs):
-        email = attrs.get('email',)
-        password = attrs.get('password',)
-
-        user = authenticate(email=email, password=password)
-
-        if not user:
-            return Response({'status': "Unable to authenticate with provided credentials" }, status=status.HTTP_400_BAD_REQUEST)
-
-        return{
-            'email': user.email,    
-            'tokens': user.tokens
-        }
-        return super().validate(attrs)
-
-

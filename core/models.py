@@ -34,6 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     profile_photo = models.ImageField(blank = True, default="default-user-icon-13.jpg")
     bio = CharField(max_length=150, null=True, blank=True)
+    active_story = BooleanField(default=False)
 
     objects = UserManager()
 
