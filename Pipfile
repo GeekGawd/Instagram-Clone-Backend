@@ -15,6 +15,7 @@ psycopg2 = "*"
 gunicorn = "*"
 pillow = "*"
 dj-database-url = "*"
+autopep8 = "*"
 
 [dev-packages]
 

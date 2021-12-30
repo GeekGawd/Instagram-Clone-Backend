@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from django.http import Http404
 from django.contrib.auth.hashers import check_password
 from django.conf import settings
+import json
         
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -168,6 +169,5 @@ class ChangePassword(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
             user.set_password(serializer.data.get("new_password"))
             user.save()
-            
-            return Response({'status': "New Password Set"},status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(user.tokens(),status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED) 
