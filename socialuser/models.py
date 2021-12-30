@@ -1,3 +1,4 @@
+from django.db.models import fields, UniqueConstraint
 from django.db.models.base import Model
 from django.db.models.fields import BooleanField, TextField
 from django.db.models.fields.files import FileField

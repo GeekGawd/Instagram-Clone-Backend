@@ -5,23 +5,28 @@ from socialuser.models import Bookmark, Comment, Profile, Like, Post, Image, Pro
 
 # Register your models here.
 
+
 class ImagesAdmin(admin.StackedInline):
     model = Images
+
 
 class VideosAdmin(admin.StackedInline):
     model = Videos
  
 class PostAdmin(admin.ModelAdmin):
     inlines = [ImagesAdmin, VideosAdmin]
- 
+
     class Meta:
-       model = Post
+        model = Post
+
 
 class ImagesAdmin(admin.ModelAdmin):
     pass
 
+
 class VideosAdmin(admin.ModelAdmin):
     pass
+
 
 admin.site.register(Post, PostAdmin)
 admin.site.register(Image, ImagesAdmin)

@@ -3,10 +3,12 @@ from rest_framework import serializers
 from core.models import *
 from socialuser.models import Image, Post, Profile, Video
 
+
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = [ 'caption','user']
+        fields = ['caption', 'user']
+
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,6 +19,7 @@ class ImageViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Images
         fields = ['images']
+
 
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
