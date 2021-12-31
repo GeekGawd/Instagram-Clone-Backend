@@ -6,6 +6,10 @@ from django.db.models.fields.related import ManyToManyField
 from core.behaviours import *
 from django.utils import timezone
 
+class FollowManager(models.Manager):
+
+    def get_followers(self, request):
+        return self.exclude(followers=request.user).get(user=request.user).followers.all()
 
 class FollowManager(models.Manager):
 

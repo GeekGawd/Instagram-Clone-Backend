@@ -69,7 +69,6 @@ class CreatePostView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
         return Response({'status': "Post created."}, status=status.HTTP_201_CREATED)
 
-
 class PostView(generics.ListAPIView):
     model = Post
     serializer_class = PostViewSerializer
@@ -103,3 +102,9 @@ class ProfileView(APIView):
             data["is_follow"] = True
         arr = {"profile": data, "posts": serializer2}
         return Response(arr, status=status.HTTP_200_OK)
+
+class ProfileUpdateView(generics.RetrieveUpdateDestroyAPIView):
+    model = Profile
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProfileViewSerializer
+    queryset = Profile.objects.all()
