@@ -1,6 +1,7 @@
+from django.db.models import fields
 from rest_framework import serializers
 from core.models import *
-from socialuser.models import Images, Post, Videos
+from socialuser.models import Image, Post, Profile, Video
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,3 +36,9 @@ class PostViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['post_image', 'post_video', 'caption','user']
+
+class ProfileViewSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        exclude = ['followers']

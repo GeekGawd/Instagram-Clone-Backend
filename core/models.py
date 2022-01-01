@@ -6,6 +6,7 @@ from django.db.models.fields import BooleanField, CharField
 from django.db.models.fields.related import OneToOneField
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
+from socialuser.models import Profile
 
 
 class UserManager(BaseUserManager):
@@ -20,6 +21,7 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, password):
         user = self.create_user(email, password)
+        Profile.objects.create(user=user)
         user.is_staff = True
         user.is_superuser = True
         user.is_active = True
@@ -32,9 +34,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    profile_photo = models.ImageField(blank = True, default="default-user-icon-13.jpg")
-    bio = CharField(max_length=150, null=True, blank=True)
-    active_story = BooleanField(default=False)
 
     objects = UserManager()
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.helpers import AdminField
 from django.db import models
-from socialuser.models import Comments, Likes, Post, Images, Videos
+from socialuser.models import Bookmark, Comment, Profile, Like, Post, Image, Profile, Video
 
 # Register your models here.
 
@@ -24,7 +24,9 @@ class VideosAdmin(admin.ModelAdmin):
     pass
 
 admin.site.register(Post, PostAdmin)
-admin.site.register(Images, ImagesAdmin)
-admin.site.register(Videos, VideosAdmin)
-admin.site.register(Comments)
-admin.site.register(Likes)
+admin.site.register(Image, ImagesAdmin)
+admin.site.register(Video, VideosAdmin)
+admin.site.register(Comment)
+admin.site.register(Like)
+admin.site.register(Profile)
+admin.site.register(Bookmark)

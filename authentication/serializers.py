@@ -9,7 +9,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from django.forms.models import model_to_dict
-
+from socialuser.models import Profile
 from core.models import User
 
 
@@ -17,11 +17,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'name', 'profile_photo', 'bio')
-        extra_kwargs = {'password': {'write_only': True, 'min_length': 5,'required': True, 'error_messages': {"required": "Password needed"}},
-            'email': {'required': True,'error_messages': {"required": "Email field may not be blank."}},
-            'name': {'required': True,'error_messages': {"required": "Name field may not be blank."}},
-            }
+        fields = ('email', 'password', 'name')
+        extra_kwargs = {'password': {'write_only': True, 'min_length': 5, 'required': True, 'error_messages': {"required": "Password needed"}},
+                        'email': {'required': True, 'error_messages': {"required": "Email field may not be blank."}},
+                        'name': {'required': True, 'error_messages': {"required": "Name field may not be blank."}},
+                        }
 
     def validate_password(self, password):
         if not re.findall('\d', password):
@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
                 _("The password must contain at least 1 lowercase letter, a-z."),
                 code='password_no_lower',
             )
-        
+
         return password
 
     def create(self, validated_data):
@@ -48,16 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.is_active = True
         user.save()
+        Profile.objects.create(user=user)
         return user
-    
-    # def update(self, instance, validated_data):
-    #     password = validated_data.pop('password', None)
-    #     user = super().update(instance, validated_data)
 
-    #     if password:
-    #         user.set_password(validated_data['password'])
-    #         user.save()
-    #     return user
 
 class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True)
@@ -81,14 +74,16 @@ class ChangePasswordSerializer(serializers.Serializer):
 
         return password
 
+
 class AuthTokenSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(required=True, error_messages={"required": "Email field may not be blank."})
+    email = serializers.CharField(required=True, error_messages={
+                                  "required": "Email field may not be blank."})
     password = serializers.CharField(write_only=True, min_length=5)
 
     class Meta:
         model = User
-        fields = ['email','access', 'refresh', 'password']
-    
+        fields = ['email', 'access', 'refresh', 'password']
+
     def to_representation(self, instance):
         data = super(AuthTokenSerializer, self).to_representation(instance)
         name = User.objects.get(email=instance['email']).name
@@ -107,10 +102,11 @@ class AuthTokenSerializer(serializers.ModelSerializer):
         )
 
         if not user:
-            raise ValidationError('Unable to authenticate with provided credentials')
- 
+            raise ValidationError(
+                'Unable to authenticate with provided credentials')
+
         return {
-            'email' : user.email,
+            'email': user.email,
             'refresh': user.refresh,
             'access': user.access,
         }

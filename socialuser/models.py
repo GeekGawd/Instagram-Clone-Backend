@@ -5,6 +5,13 @@ from django.db.models.fields.related import ManyToManyField
 from core.behaviours import *
 from django.utils import timezone
 
+
+class FollowManager(models.Manager):
+
+    def get_followers(self, request):
+        return self.exclude(followers=request.user).get(user=request.user).followers.all()
+
+
 class Post(Authorable, Model):
     created_at = models.DateTimeField(default=timezone.now)
     caption = TextField(max_length=350)
@@ -19,14 +26,39 @@ class Videos(Model):
 
 class Comments(Model):
     comment = TextField(max_length=250)
-    comment_by = ForeignKey(User, on_delete=models.CASCADE)
+    comment_by = ForeignKey("core.User", on_delete=models.CASCADE)
     post = ForeignKey(Post, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.comment_by.name} -> {self.comment[:35]}"
 
-class Likes(Model):
-    like = BooleanField(default=False)
-    liked_by = ForeignKey(User, on_delete=models.CASCADE)
-    post = ManyToManyField(Post)
-    comment = ManyToManyField(Comments)
+
+class Like(Model):
+    liked_by = ForeignKey("core.User", on_delete=models.CASCADE, null=True)
+    post = ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True)
+    comment = ForeignKey(Comment, on_delete=models.CASCADE,
+                         null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                name='unique_like',
+                fields=['liked_by', 'post']
+            ),
+            UniqueConstraint(
+                name='unique_comment',
+                fields=['liked_by', 'comment']
+            )
+        ]
+
+
+class Profile(Followable, Model):
+    profile_photo = models.ImageField(blank = True, default="default-user-icon-13.jpg")
+    bio = models.CharField(max_length=150, null=True, blank=True)
+    active_story = models.BooleanField(default=False)
+    
+    objects = FollowManager()
+
+
+class Bookmark(Bookmarkable, Model):
+    pass

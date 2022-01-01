@@ -16,6 +16,11 @@ gunicorn = "*"
 pillow = "*"
 dj-database-url = "*"
 autopep8 = "*"
+celery = "*"
+redis = "*"
+django-celery-results = "*"
+flower = "*"
+django-rest-multiple-models = "*"
 
 [dev-packages]
 
