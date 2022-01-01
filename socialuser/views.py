@@ -1,7 +1,6 @@
 import re
 from core.models import User
 from django.db import models
-from drf_multiple_model.views import ObjectMultipleModelAPIView
 from rest_framework import generics
 from rest_framework import serializers, status
 from rest_framework.response import Response
