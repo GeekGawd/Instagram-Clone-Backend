@@ -2,11 +2,12 @@ import re
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,PermissionsMixin
-from django.db.models.fields import BooleanField, CharField
+from django.db.models.fields import BooleanField, CharField, TextField
 from django.db.models.fields.related import OneToOneField
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from socialuser.models import Profile
+from core.behaviours import Authorable
 
 
 class UserManager(BaseUserManager):
@@ -64,3 +65,9 @@ class OTP(models.Model):
     
     def __str__(self):
         return f"{self.otp_email} : {self.otp}"
+
+class Notification(Authorable, models.Model):
+    notification = models.TextField(max_length=250)
+
+    def __str__(self) -> str:
+        return f"{self.user}-->{self.notification}"

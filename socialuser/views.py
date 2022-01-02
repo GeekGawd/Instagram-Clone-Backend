@@ -1,4 +1,6 @@
 import re
+
+from rest_framework import permissions
 from core.models import User
 from django.db import models
 from rest_framework import generics
@@ -95,8 +97,8 @@ class ProfileView(APIView):
 
         data = serializer1.data
         data["is_follow"] = False
-        data["following"] = len(session_user_profile.followers.all())
-        data["followers"] = len(request.user.followers.all())
+        data["following"] = len(request_user_profile.followers.all())
+        data["followers"] = len(request_user_profile.user.followers.all())
 
         if session_user_profile.followers.filter(id=pk).exists():
             data["is_follow"] = True
