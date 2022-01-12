@@ -1,17 +1,16 @@
 from django.contrib import admin
 from django.contrib.admin.helpers import AdminField
 from django.db import models
-from socialuser.models import Bookmark, Comment, Profile, Like, Post, Image, Profile, Video
+from socialuser.models import Bookmark, Comment, FollowRequest, Profile, Post, Image, Profile, Story, Video
 
 # Register your models here.
 
 
 class ImagesAdmin(admin.StackedInline):
-    model = Images
-
+    model = Image
 
 class VideosAdmin(admin.StackedInline):
-    model = Videos
+    model = Video
  
 class PostAdmin(admin.ModelAdmin):
     inlines = [ImagesAdmin, VideosAdmin]
@@ -32,6 +31,7 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Image, ImagesAdmin)
 admin.site.register(Video, VideosAdmin)
 admin.site.register(Comment)
-admin.site.register(Like)
 admin.site.register(Profile)
 admin.site.register(Bookmark)
+admin.site.register(FollowRequest)
+admin.site.register(Story)

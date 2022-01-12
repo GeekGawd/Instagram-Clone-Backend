@@ -73,7 +73,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             )
 
         return password
-
+    
 
 class AuthTokenSerializer(serializers.ModelSerializer):
     email = serializers.CharField(required=True, error_messages={

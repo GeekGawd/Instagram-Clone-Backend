@@ -21,6 +21,7 @@ redis = "*"
 django-celery-results = "*"
 flower = "*"
 django-rest-multiple-models = "*"
+channels-redis = "*"
 
 [dev-packages]
 

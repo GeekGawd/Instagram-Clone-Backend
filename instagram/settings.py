@@ -45,7 +45,10 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'core.apps.CoreConfig',
     'authentication',
-    'socialuser'
+    'socialuser',
+    'chat.apps.ChatConfig',
+    'channels',
+    'django_celery_results'
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -213,3 +216,24 @@ EMAIL_PORT = config('EMAIL_PORT', default=25, cast=int)
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default='')
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
+
+#CELERY SETTINGS
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = config('CELERY_TIMEZONE')
+
+CELERY_RESULT_BACKEND =  config('CELERY_RESULT_BACKEND')
+
+ASGI_APPLICATION = 'instagram.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}

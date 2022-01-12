@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/', include('authentication.urls')),
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT,}),
     path('api/user/', include('socialuser.urls')),
+    path('chat/', include('chat.api.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
