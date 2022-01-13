@@ -1,3 +1,4 @@
+import re
 from django.db.models import query, Q
 from django.http import request
 from rest_framework import permissions
@@ -26,16 +27,31 @@ class CreatePostView(APIView):
     def post(self, request):
         photos = request.data['photos']
         videos = request.data['videos']
-        request.data['user'] = request.user.id
+        try:
+            request.data['user'] = request.user.id
+        except:
+            return Response({"status": "User not registered."},status=status.HTTP_401_UNAUTHORIZED)
+
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             post = serializer.save()
+        
+        if photos is None and videos is None:
+            return Response({"status": "Cannot create post with no media."}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        img = [Image(post=post, images=photo) for photo in photos]
-        Image.objects.bulk_create(img)
+        if photos is None:
+            photos = []
 
-        vdo = [Video(post=post, videos=video) for video in videos]
-        Video.objects.bulk_create(vdo)
+        if videos is None:
+            videos = []
+
+        if isinstance(photos, list):
+            img = [Image(post=post, images=photo) for photo in photos]
+            Image.objects.bulk_create(img)
+
+        if isinstance(videos, list):
+            vdo = [Video(post=post, videos=video) for video in videos]
+            Video.objects.bulk_create(vdo)
 
         return Response({"status": "Post successfully created."},status=status.HTTP_201_CREATED)
         
