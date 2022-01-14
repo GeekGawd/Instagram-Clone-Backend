@@ -55,7 +55,7 @@ class CreatePostView(APIView):
 
         return Response({"status": "Post successfully created."},status=status.HTTP_201_CREATED)
         
-class PostView(generics.GenericAPIView, mixins.ListModelMixin, mixins.UpdateModelMixin):
+class PostView(generics.GenericAPIView, mixins.ListModelMixin):
     model = Post
     serializer_class = PostViewSerializer
 
@@ -66,8 +66,7 @@ class PostView(generics.GenericAPIView, mixins.ListModelMixin, mixins.UpdateMode
                 Post.objects.get(user=follower)
                 posts.append(Post.objects.get(user=follower))
             except:
-                posts.append(Post.objects.none())
-        
+                pass
         return posts
     
     def get(self, request, *args, **kwargs):

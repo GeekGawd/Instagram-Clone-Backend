@@ -70,7 +70,6 @@ class Profile(Followable, Model):
     active_story = models.BooleanField(default=False)
     is_private = models.BooleanField(default=False)
     
-    
     objects = FollowManager()
 
     def __str__(self):

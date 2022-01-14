@@ -66,8 +66,13 @@ class OTP(models.Model):
     def __str__(self):
         return f"{self.otp_email} : {self.otp}"
 
-class Notification(Authorable, models.Model):
-    notification = models.TextField(max_length=250)
+class Notification(models.Model):
+    post = models.ForeignKey('socialuser.Post', on_delete=models.CASCADE, related_name="noti_post", blank=True, null=True)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="noti_from_user")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="noti_to_user")
+    text = models.TextField(max_length=250)
+    date = models.DateTimeField(auto_now_add=True)
+    is_seen = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return f"{self.user}-->{self.notification}"
+        return f"{self.user}-->{self.text}"

@@ -92,14 +92,14 @@ class CommentSerializer(serializers.ModelSerializer):
 #         fields = '__all__'
 
 class PostViewSerializer(serializers.ModelSerializer):
-    comments = CommentSerializer(many=True, source='comment_set')
+    # comments = CommentSerializer(many=True, source='comment_set')
     # media = MediaSerializer(many=True, source='media_set')
-    post_image = ImageViewSerializer(source='image_set', many=True)
-    post_video = VideoViewSerializer(source='video_set', many=True)
+    post_image = ImageViewSerializer(many=True, source='image_set')
+    post_video = VideoViewSerializer(many=True, source='video_set')
     
     class Meta:
         model = Post
-        fields = ['comments','media','caption','user','liked_by', 'id']
+        fields = ['post_image','post_video','caption','user','liked_by', 'id']
 
     def to_representation(self, instance):
         data =  super(PostViewSerializer, self).to_representation(instance)
