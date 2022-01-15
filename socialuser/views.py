@@ -1,4 +1,6 @@
+from os import stat
 import re
+from turtle import pos
 from django.db.models import query, Q
 from django.http import request
 from rest_framework import permissions
@@ -61,10 +63,11 @@ class PostView(generics.GenericAPIView, mixins.ListModelMixin):
 
     def get_queryset(self):
         posts = []
+        # print(dir(Post.objects.select_related("user")))
         for follower in Profile.objects.get_followers(self.request):
             try:
-                Post.objects.get(user=follower)
-                posts.append(Post.objects.get(user=follower))
+                for post in Post.objects.filter(user=follower):
+                    posts.append(post)
             except:
                 pass
         return posts
@@ -122,24 +125,27 @@ class FollowerCreateView(APIView):
         profile = Profile.objects.get(user=request.user)
         user_id = request.data.get("user_id")
         request_user_profile, _ = Profile.objects.get_or_create(user=User.objects.get(id=user_id))
+
+        if user_id == request.user.id:
+            return Response({"status": "You cannot follow yourself."}, status=status.HTTP_403_FORBIDDEN)
         if profile.followers.filter(pk=request_user_profile.user.id).exists():
             profile.followers.remove(request_user_profile.user)
-            return Response("User Unfollowed")
+            return Response({"status": "User Unfollowed"}, status=status.HTTP_202_ACCEPTED)
             
         elif not request_user_profile.is_private:
             profile.followers.add(request_user_profile.user)
-            return Response("User followed")
+            return Response({"status":"User followed"}, status=status.HTTP_200_OK)
         
         else:
             try: 
                 follow_request = FollowRequest.objects.get(from_user=request.user,
                                 to_user=request_user_profile.user)
                 follow_request.delete()
-                return Response({"status": "Follow Request Removed."})
+                return Response({"status": "Follow Request Removed."}, status=status.HTTP_204_NO_CONTENT)
             except:
                 FollowRequest.objects.create(from_user=request.user,
                                         to_user=request_user_profile.user)
-                return Response({"status":"Follow Request Sent to User"})
+                return Response({"status":"Follow Request Sent to User"}, status=status.HTTP_201_CREATED)
 
 class FollowRequestView(APIView):
     serializer_class = FollowRequestSerializer
