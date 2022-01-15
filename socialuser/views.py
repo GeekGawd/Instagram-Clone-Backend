@@ -74,7 +74,7 @@ class PostView(generics.GenericAPIView, mixins.ListModelMixin):
 
 
 class ProfileView(APIView):
-
+    
     def get(self, request, pk):
         request_user_profile, _ = Profile.objects.get_or_create(user=pk)
         session_user_profile, _ = Profile.objects.get_or_create(
