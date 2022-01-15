@@ -13,14 +13,15 @@ def new_follower(sender, **kwargs):
         new_followers = [Notification(
             user=to_user, sender=User.objects.get(id=follower),
             text=f"{User.objects.get(id=follower)} has started following you"
-            ) for follower in new_followers]
+        ) for follower in new_followers]
         Notification.objects.bulk_create(new_followers)
 
+
 @receiver(m2m_changed)
-def remove_follower(sender,instance,**kwargs):
+def remove_follower(sender, instance, **kwargs):
     if kwargs['action'] == "post_remove":
-        print("successful")
         followers = kwargs['pk_set']
         for follower in followers:
-            notify = Notification.objects.filter(sender=User.objects.get(id=follower), user=instance.user)
+            notify = Notification.objects.filter(
+                sender=User.objects.get(id=follower), user=instance.user)
             notify.delete()
