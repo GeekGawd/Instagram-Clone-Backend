@@ -1,10 +1,3 @@
-from os import stat
-import re
-from turtle import pos
-from django.db.models import query, Q
-from django.http import request
-from rest_framework import permissions
-from chat import api
 from core.models import User
 from django.db import models
 from rest_framework import generics, mixins
