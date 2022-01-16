@@ -22,6 +22,9 @@ class Post(Authorable,Creatable, Model):
     caption = TextField(max_length=350, null=True, blank=True)
     liked_by = ManyToManyField("core.User", related_name="like_post", blank=True)
 
+    def no_of_likes(self):
+        return len(self.liked_by.all())
+
 class Image(Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     images = models.URLField(max_length=200)

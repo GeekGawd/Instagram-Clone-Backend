@@ -8,7 +8,7 @@ from socialuser.views import CommentCreateView, CreatePostView, FollowRequestVie
 urlpatterns = [
     path('post/create/', CreatePostView.as_view(), name='postcreate'),
     path('post/', PostView.as_view(), name='post'),
-    path('profile/<int:pk>/', ProfileView.as_view(), name='post'),
+    path('profile/', ProfileView.as_view(), name='post'),
     # path('profile/update/<int:pk>/', ProfileUpdateView.as_view(), name='post'),
     path('profile/update/', UserProfileChangeAPIView.as_view(), name='profile'),
     path('profile/follow/', FollowerCreateView.as_view(), name='follow'),

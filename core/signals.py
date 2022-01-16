@@ -7,6 +7,7 @@ from core.models import Notification, User
 
 @receiver(m2m_changed)
 def new_follower(sender, **kwargs):
+    print(kwargs)
     if kwargs['action'] == "post_add" and not kwargs['reverse']:
         to_user = kwargs['instance'].user
         new_followers = kwargs['pk_set']

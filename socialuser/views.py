@@ -1,3 +1,6 @@
+from http.client import REQUEST_ENTITY_TOO_LARGE
+import re
+from tkinter.tix import WINDOW
 from core.models import User
 from django.db import models
 from rest_framework import generics, mixins
@@ -71,26 +74,39 @@ class PostView(generics.GenericAPIView, mixins.ListModelMixin):
 
 class ProfileView(APIView):
     
-    def get(self, request, pk):
-        request_user_profile, _ = Profile.objects.get_or_create(user=pk)
+    def get(self, request):
+        user_id = request.data.get("user_id")
+        if user_id:
+            try:
+                request_user_profile, _ = Profile.objects.get_or_create(user=User.objects.get(id=user_id))
+            except:
+                return Response({"status": "User doesn't exist"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response({"status": "Enter a user_id"}, status=status.HTTP_400_BAD_REQUEST)
         session_user_profile, _ = Profile.objects.get_or_create(
             user=self.request.user)
         serializer1 = ProfileViewSerializer(request_user_profile)
         try:
             serializer2 = PostViewSerializer(
-                Post.objects.filter(user=pk), many=True).data
+                Post.objects.filter(user=user_id), many=True).data
         except:
             serializer2 = {"posts": None}
 
         data = serializer1.data
-        data["is_follow"] = False
+        if str(session_user_profile) != str(request_user_profile):
+            data["is_follow"] = False
         data["following"] = len(request_user_profile.followers.all())
         data["followers"] = len(request_user_profile.user.followers.all())
 
-        if session_user_profile.followers.filter(id=pk).exists():
+        if session_user_profile.followers.filter(id=user_id).exists() or request_user_profile.is_private==False:
             data["is_follow"] = True
-        arr = {"profile": data, "posts": serializer2}
-        return Response(arr, status=status.HTTP_200_OK)
+            arr = {"profile": data, "posts": serializer2}
+            return Response(arr, status=status.HTTP_200_OK)
+        else:
+            print("wow")
+            arr = {"profile": data, "posts": "User Profile Private."}
+            return Response(arr, status=status.HTTP_206_PARTIAL_CONTENT)
+        
     
 class UserProfileChangeAPIView(generics.GenericAPIView,
                                mixins.RetrieveModelMixin,
@@ -121,7 +137,7 @@ class FollowerCreateView(APIView):
 
         if user_id == request.user.id:
             return Response({"status": "You cannot follow yourself."}, status=status.HTTP_403_FORBIDDEN)
-        if profile.followers.filter(pk=request_user_profile.user.id).exists():
+        if profile.followers.filter(id=request_user_profile.user.id).exists():
             profile.followers.remove(request_user_profile.user)
             return Response({"status": "User Unfollowed"}, status=status.HTTP_202_ACCEPTED)
             
@@ -158,7 +174,7 @@ class FollowRequestView(APIView):
             return Response({"status": "No Follow Request has been sent."})
         
         if confirmation.casefold() == "true":
-            Profile.objects.get(user=request.user).followers.add(follow_request.from_user)
+            Profile.objects.get(user=follow_request.to_user).followers.add(follow_request.from_user)
             follow_request.delete() 
             return Response({"status": "Follow Request Accepted."})
         elif confirmation.casefold() == "false":

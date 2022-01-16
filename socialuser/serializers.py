@@ -41,6 +41,11 @@ class ProfileViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         exclude = ['followers']
+    
+    def to_representation(self, instance):
+        data =  super(ProfileViewSerializer, self).to_representation(instance)
+        data['user_name'] = instance.user.name
+        return data
 
 class FollowerViewSerializer(serializers.ModelSerializer):
 
@@ -99,12 +104,13 @@ class PostViewSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Post
-        fields = ['post_image','post_video','caption','user','liked_by', 'id']
+        fields = ['post_image','post_video','caption','user','no_of_likes', 'id']
 
     def to_representation(self, instance):
         data =  super(PostViewSerializer, self).to_representation(instance)
         post_id = data.pop('id')
         data['post_id'] = post_id
+        data['user_name'] = instance.user.name
         return data
 
 class HomeFeedStorySerializer(serializers.ModelSerializer):
