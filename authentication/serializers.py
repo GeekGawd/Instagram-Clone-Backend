@@ -110,3 +110,14 @@ class AuthTokenSerializer(serializers.ModelSerializer):
             'refresh': user.refresh,
             'access': user.access,
         }
+
+class CreateUsernameSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ['username', 'user']
+    
+    # def to_representation(self, instance):
+    #     data = super(CreateUsernameSerializer, self).to_representation(instance)
+    
+

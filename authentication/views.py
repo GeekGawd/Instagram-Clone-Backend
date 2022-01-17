@@ -1,7 +1,8 @@
-from rest_framework import generics, serializers, status, authentication, permissions
+from urllib import request
+from rest_framework import generics, serializers, status, mixins
 from core.models import *
 import time, random
-from authentication.serializers import AuthTokenSerializer, ChangePasswordSerializer, UserSerializer
+from authentication.serializers import AuthTokenSerializer, ChangePasswordSerializer, CreateUsernameSerializer, UserSerializer
 from django.core.mail import EmailMessage
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -149,3 +150,9 @@ class Test(APIView):
 
     def get(self, request):
         return Response("Hello")
+
+class CreateUsername(generics.GenericAPIView, mixins.CreateModelMixin):
+    serializer_class = CreateUsernameSerializer
+    
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, user=self.request.user,**kwargs)

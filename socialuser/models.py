@@ -1,4 +1,5 @@
 import re
+from statistics import mode
 from django.db.models import fields, UniqueConstraint
 from django.db.models.base import Model
 from django.db.models.fields import BooleanField, TextField
@@ -6,6 +7,7 @@ from django.db.models.fields.files import FileField
 from django.db.models.fields.related import ManyToManyField
 from core.behaviours import *
 from django.utils import timezone
+from django.contrib.auth.validators import UnicodeUsernameValidator
 
 class FollowManager(models.Manager):
 
@@ -17,10 +19,17 @@ class StoryManager(models.Manager):
     def get_story(self, request):
         return self.exclude(Q(profile=Profile.objects.get(user=request.user)) | Q(is_expired=True)).order_by('-id')
 
+class PostManager(models.Manager):
+
+    def post_authorization(self, request_user_profile, session_user_profile):
+        return request_user_profile.followers.filter(email=session_user_profile.user.email).exists() or not request_user_profile.is_private or session_user_profile==request_user_profile
+
 
 class Post(Authorable,Creatable, Model):
     caption = TextField(max_length=350, null=True, blank=True)
     liked_by = ManyToManyField("core.User", related_name="like_post", blank=True)
+
+    objects = PostManager()
 
     def no_of_likes(self):
         return len(self.liked_by.all())
@@ -67,16 +76,24 @@ class Comment(Model):
 
 
 class Profile(Followable, Model):
-    user = models.OneToOneField("core.User", on_delete=models.CASCADE, null=True)
+    user = models.OneToOneField("core.User", on_delete=models.CASCADE)
+    username_validator = UnicodeUsernameValidator()
+    username = models.CharField(
+        ('username'),
+        max_length=150,
+        unique=True,
+        help_text=('Required. 150 characters or fewer. Letters, digits and _/. only.'),
+        validators=[username_validator],
+        error_messages={
+            'unique': ("A user with that username already exists."),
+        },
+    )
     profile_photo = models.ImageField(blank = True, default="default-user-icon-13.jpg")
     bio = models.CharField(max_length=150, null=True, blank=True)
     active_story = models.BooleanField(default=False)
     is_private = models.BooleanField(default=False)
     
     objects = FollowManager()
-
-    def __str__(self):
-        return self.user.email
 
 class Bookmark(Bookmarkable, Model):
     pass

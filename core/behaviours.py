@@ -15,7 +15,7 @@ class Authorable(models.Model):
 
 
 class Followable(models.Model):
-    followers = models.ManyToManyField("core.User", related_name="followers")
+    followers = models.ManyToManyField("core.User", related_name="followers", blank=True)
 
     class Meta:
         abstract = True

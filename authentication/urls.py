@@ -20,5 +20,7 @@ urlpatterns = [
      
     path('changepsw/', views.ChangePassword.as_view(), name='loggedinuser'),
 
+    path('createusername/', views.CreateUsername.as_view(), name='createusername'),
+
     path('test/', views.Test.as_view(), name='loggedinuser'),
 ]

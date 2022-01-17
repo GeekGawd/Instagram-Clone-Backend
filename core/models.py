@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 from socialuser.models import Profile
 from core.behaviours import Authorable
+from django.contrib.auth.models import User
 
 
 class UserManager(BaseUserManager):

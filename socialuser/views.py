@@ -1,6 +1,3 @@
-from http.client import REQUEST_ENTITY_TOO_LARGE
-import re
-from tkinter.tix import WINDOW
 from core.models import User
 from django.db import models
 from rest_framework import generics, mixins
@@ -95,15 +92,15 @@ class ProfileView(APIView):
         data = serializer1.data
         if str(session_user_profile) != str(request_user_profile):
             data["is_follow"] = False
-        data["following"] = len(request_user_profile.followers.all())
-        data["followers"] = len(request_user_profile.user.followers.all())
+        data["following"] = len(request_user_profile.user.followers.all())
+        data["followers"] = len(request_user_profile.followers.all())
 
-        if session_user_profile.followers.filter(id=user_id).exists() or request_user_profile.is_private==False:
+        if Post.objects.post_authorization  (request_user_profile, session_user_profile):
             data["is_follow"] = True
             arr = {"profile": data, "posts": serializer2}
             return Response(arr, status=status.HTTP_200_OK)
         else:
-            print("wow")
+            data["is_follow"] = None
             arr = {"profile": data, "posts": "User Profile Private."}
             return Response(arr, status=status.HTTP_206_PARTIAL_CONTENT)
         
@@ -150,7 +147,7 @@ class FollowerCreateView(APIView):
                 follow_request = FollowRequest.objects.get(from_user=request.user,
                                 to_user=request_user_profile.user)
                 follow_request.delete()
-                return Response({"status": "Follow Request Removed."}, status=status.HTTP_204_NO_CONTENT)
+                return Response({"status": "Follow Request Removed."}, status=status.HTTP_205_RESET_CONTENT)
             except:
                 FollowRequest.objects.create(from_user=request.user,
                                         to_user=request_user_profile.user)
