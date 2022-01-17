@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'chat.apps.ChatConfig',
     'channels',
     'django_celery_results',
-    'search',
     'django.contrib.postgres'
 ]
 
