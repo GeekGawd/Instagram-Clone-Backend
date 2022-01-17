@@ -116,8 +116,3 @@ class CreateUsernameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['username', 'user']
-    
-    # def to_representation(self, instance):
-    #     data = super(CreateUsernameSerializer, self).to_representation(instance)
-    
-

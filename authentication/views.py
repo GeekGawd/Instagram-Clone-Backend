@@ -151,8 +151,9 @@ class Test(APIView):
     def get(self, request):
         return Response("Hello")
 
-class CreateUsername(generics.GenericAPIView, mixins.CreateModelMixin):
+class CreateUsername(generics.CreateAPIView):
     serializer_class = CreateUsernameSerializer
     
-    def post(self, request, *args, **kwargs):
-        return super().create(request, *args, user=self.request.user,**kwargs)
+    def create(self, request, *args, **kwargs):
+        request.data.update({'user': request.user.id})
+        return super(CreateUsername, self).create(request, *args, **kwargs)
