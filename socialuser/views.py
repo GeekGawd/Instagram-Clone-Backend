@@ -1,19 +1,21 @@
+from doctest import DocFileSuite
 from core.models import User
 from django.db import models
+from django.views.generic.list import ListView
 from rest_framework import generics, mixins
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
-from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Image, Video
+from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
 from socialuser.serializers import CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
      FollowerViewSerializer, HomeFeedStorySerializer,\
-     LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer,\
-     ProfileViewSerializer, StorySerializer
+     LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
+     ProfileViewSerializer, StorySerializer, TagSearchSerializer
+from django.contrib.postgres.search import TrigramSimilarity
 
 # Create your views here.
-
 
 class CreatePostView(APIView):
     permission_classes = [IsAuthenticated]
@@ -22,6 +24,8 @@ class CreatePostView(APIView):
     def post(self, request):
         photos = request.data['photos']
         videos = request.data['videos']
+        caption = request.data.get("caption")
+
         try:
             request.data['user'] = request.user.id
         except:
@@ -48,6 +52,7 @@ class CreatePostView(APIView):
             vdo = [Video(post=post, videos=video) for video in videos]
             Video.objects.bulk_create(vdo)
 
+        Tag.objects.extract_hashtags(post, caption)
         return Response({"status": "Post successfully created."},status=status.HTTP_201_CREATED)
         
 class PostView(generics.GenericAPIView, mixins.ListModelMixin):
@@ -247,3 +252,30 @@ class LikeView(APIView):
 
 class CommentCreateView(generics.CreateAPIView):
     serializer_class = CommentSerializer
+
+class TagSearchView(generics.ListAPIView):
+    serializer_class = TagSearchSerializer
+
+    def get_queryset(self):
+        query = self.request.data.get("search")
+        # return Tag.objects.filter(tag__trigram_word_similar=query)
+        return Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
+
+class GetPostFromTagView(generics.ListAPIView):
+    serializer_class = PostViewSerializer
+
+    def get_queryset(self):
+        tag = self.request.data.get("tag")
+        try:
+            return Tag.objects.get(tag=tag).post.all()
+        except:
+            return list()
+
+class ProfileSearchView(generics.ListAPIView):
+    model = Profile
+    serializer_class = ProfileSearchSerializer
+
+    def get_queryset(self):
+        query = self.request.data.get("search")
+        # return Profile.objects.filter(username__trigram_word_similar=query)
+        return Profile.objects.annotate(similarity=TrigramSimilarity('username', query),).filter(similarity__gt=0.065).order_by('-similarity')

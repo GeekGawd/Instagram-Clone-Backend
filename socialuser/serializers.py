@@ -3,7 +3,7 @@ from django.db.models.fields.related import ForeignKey
 from rest_framework import serializers
 from core.models import *
 import socialuser
-from socialuser.models import Comment, FollowRequest, Post, Profile, Story, Image, Video
+from socialuser.models import Comment, FollowRequest, Post, Profile, Story, Image, Tag, Video
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -119,4 +119,20 @@ class HomeFeedStorySerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['profile_photo', 'active_story', 'user']
 
-        
+
+class TagSearchSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ['id','tag','no_of_posts']
+
+class ProfileSearchSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        exclude = ['followers', 'bio', 'is_private']
+    
+    def to_representation(self, instance):
+        data =  super(ProfileSearchSerializer, self).to_representation(instance)
+        data['user_name'] = instance.user.name
+        return data

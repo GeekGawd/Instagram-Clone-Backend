@@ -48,7 +48,9 @@ INSTALLED_APPS = [
     'socialuser',
     'chat.apps.ChatConfig',
     'channels',
-    'django_celery_results'
+    'django_celery_results',
+    'search',
+    'django.contrib.postgres'
 ]
 
 AUTH_USER_MODEL = 'core.User'

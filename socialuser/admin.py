@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.helpers import AdminField
 from django.db import models
-from socialuser.models import Bookmark, Comment, FollowRequest, Profile, Post, Image, Profile, Story, Video
+from socialuser.models import Bookmark, Comment, FollowRequest, Profile, Post, Image, Profile, Story, Tag, Video
 
 # Register your models here.
 
@@ -35,3 +35,4 @@ admin.site.register(Profile)
 admin.site.register(Bookmark)
 admin.site.register(FollowRequest)
 admin.site.register(Story)
+admin.site.register(Tag)

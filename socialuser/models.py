@@ -1,5 +1,6 @@
 import re
 from statistics import mode
+from tkinter.tix import Tree
 from django.db.models import fields, UniqueConstraint
 from django.db.models.base import Model
 from django.db.models.fields import BooleanField, TextField
@@ -19,6 +20,21 @@ class StoryManager(models.Manager):
     def get_story(self, request):
         return self.exclude(Q(profile=Profile.objects.get(user=request.user)) | Q(is_expired=True)).order_by('-id')
 
+class TagManager(models.Manager):
+
+    def extract_hashtags(self,post,text):
+     
+        # the regular expression
+        regex = "#(\w+)"
+        
+        # extracting the hashtags
+        hashtag_list = re.findall(regex, text)
+        hashtag_list = set(hashtag_list)
+        for hashtag in hashtag_list:
+           tag, _ = Tag.objects.get_or_create(tag=hashtag)
+           tag.post.add(post)
+
+
 class PostManager(models.Manager):
 
     def post_authorization(self, request_user_profile, session_user_profile):
@@ -28,6 +44,7 @@ class PostManager(models.Manager):
 class Post(Authorable,Creatable, Model):
     caption = TextField(max_length=350, null=True, blank=True)
     liked_by = ManyToManyField("core.User", related_name="like_post", blank=True)
+    # tag = ManyToManyField(Tag, blank=True)
 
     objects = PostManager()
 
@@ -110,8 +127,13 @@ class Story(Creatable,Model):
     objects = StoryManager()
 
 class Tag(models.Model):
-    product = models.ManyToManyField(Post, related_name="tag_product")
-    tag = models.CharField(max_length=30, unique=True)
+    post = ManyToManyField(Post, related_name="tag_post")
+    tag = models.CharField(max_length=30, unique=True, blank=True, null=True)
+
+    objects = TagManager()
     
     def __str__(self):
-        return self.tag
+        return f"#{self.tag}"
+    
+    def no_of_posts(self):
+        return len(self.post.all())

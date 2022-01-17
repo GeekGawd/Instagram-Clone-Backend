@@ -1,13 +1,14 @@
 from urllib import request
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from rest_framework.response import Response
 
 from core.models import Notification, User
+from socialuser.models import Profile
 
 
-@receiver(m2m_changed)
+@receiver(m2m_changed, sender=Profile)
 def new_follower(sender, **kwargs):
-    print(kwargs)
     if kwargs['action'] == "post_add" and not kwargs['reverse']:
         to_user = kwargs['instance'].user
         new_followers = kwargs['pk_set']
@@ -18,7 +19,7 @@ def new_follower(sender, **kwargs):
         Notification.objects.bulk_create(new_followers)
 
 
-@receiver(m2m_changed)
+@receiver(m2m_changed, sender=Profile)
 def remove_follower(sender, instance, **kwargs):
     if kwargs['action'] == "post_remove":
         followers = kwargs['pk_set']
