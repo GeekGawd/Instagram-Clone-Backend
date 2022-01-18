@@ -1,7 +1,3 @@
-from os import stat
-from sqlite3 import IntegrityError
-from turtle import st
-from urllib import request
 from rest_framework import generics, serializers, status, mixins
 from core.models import *
 import time, random
