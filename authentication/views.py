@@ -1,3 +1,6 @@
+from os import stat
+from sqlite3 import IntegrityError
+from turtle import st
 from urllib import request
 from rest_framework import generics, serializers, status, mixins
 from core.models import *
@@ -10,11 +13,32 @@ from rest_framework.views import APIView
 from django.http import Http404
 from django.contrib.auth.hashers import check_password
 from django.conf import settings
-import json
+from django.core.exceptions import BadRequest, ObjectDoesNotExist
 from authentication.tasks import send_login_mail, send_otp_email
         
-class CreateUserView(generics.CreateAPIView):
+class CreateUserView(generics.GenericAPIView, mixins.CreateModelMixin):
     serializer_class = UserSerializer
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        email = request.data.get("email")
+        try:
+            profile = Profile.objects.get(username=username)
+            if profile.user:
+                return Response({"status": "Username already Taken."}, status=status.HTTP_409_CONFLICT)    
+            else:
+                serializer = self.serializer_class(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    user = serializer.save()
+                profile.user = user
+                profile.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ObjectDoesNotExist:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                    user = serializer.save()
+            profile = Profile.objects.create(username=username, user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -151,9 +175,16 @@ class Test(APIView):
     def get(self, request):
         return Response("Hello")
 
-class CreateUsername(generics.CreateAPIView):
+class CreateUsername(generics.GenericAPIView, mixins.CreateModelMixin):
     serializer_class = CreateUsernameSerializer
     
-    def create(self, request, *args, **kwargs):
-        request.data.update({'user': request.user.id})
-        return super(CreateUsername, self).create(request, *args, **kwargs)
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        try:
+            profile = Profile.objects.get(username=username)
+            if profile.user:
+                raise BadRequest("Username already Taken.")
+            else:
+                return Response({"username": f"{username}"}, status=status.HTTP_201_CREATED)
+        except:
+            return super(CreateUsername, self).create(request, *args, **kwargs)

@@ -93,7 +93,7 @@ class Comment(Model):
 
 
 class Profile(Followable, Model):
-    user = models.OneToOneField("core.User", on_delete=models.CASCADE)
+    user = models.OneToOneField("core.User", on_delete=models.CASCADE,null=True, blank=True)
     username_validator = UnicodeUsernameValidator()
     username = models.CharField(
         ('username'),

@@ -1,9 +1,10 @@
 from os import stat, write
+from pickletools import read_uint1
 from django.contrib.auth import get_user_model, authenticate
 from django.db.models import fields
 from django.core.exceptions import ValidationError
 import re
-from django.http import request
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers, status
 from rest_framework.exceptions import AuthenticationFailed
@@ -49,6 +50,21 @@ class UserSerializer(serializers.ModelSerializer):
         user.is_active = True
         user.save()
         return user
+    
+    def to_representation(self,instance):
+
+        data = super(UserSerializer, self).to_representation(instance)
+        try:
+            username = self.initial_data['username']
+        except KeyError:
+            raise ValidationError("Username not provided")
+        user = instance
+        data['access']=user.access()
+        data['refresh']=user.refresh()
+        data['username']=username
+        data['user']=user.id
+
+        return data
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -114,4 +130,4 @@ class CreateUsernameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['username', 'user']
+        fields = ['username']
