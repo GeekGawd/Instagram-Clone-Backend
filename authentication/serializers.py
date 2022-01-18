@@ -101,9 +101,11 @@ class AuthTokenSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super(AuthTokenSerializer, self).to_representation(instance)
-        name = User.objects.get(email=instance['email']).name
+        user = User.objects.get(email=instance['email'])
         # name = User.objects.get(email=self.email)
-        data['name'] = name
+        data['name'] = user.name
+        data['username']= Profile.objects.get(user=user).username
+        data['user']=user.id
         return data
 
     def validate(self, attrs):

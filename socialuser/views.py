@@ -1,4 +1,3 @@
-from doctest import DocFileSuite
 from core.models import User
 from django.db import models
 from django.views.generic.list import ListView
@@ -185,7 +184,10 @@ class FollowRequestView(APIView):
         else:
             return Response({"status": "Enter a valid confirmation."})
 
-class StoryView(generics.GenericAPIView, mixins.ListModelMixin, mixins.DestroyModelMixin):
+class StoryView(generics.GenericAPIView, 
+                mixins.ListModelMixin,
+                mixins.DestroyModelMixin,
+                mixins.CreateModelMixin):
     serializer_class = StorySerializer
 
     def get_queryset(self):
@@ -204,12 +206,15 @@ class StoryView(generics.GenericAPIView, mixins.ListModelMixin, mixins.DestroyMo
         return Story.objects.get(id=story_id)
 
     def get(self, request, *args, **kwargs):
-        return super().list  (request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
     
     def delete(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
-class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin):
+class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin):
     serializer_class = HomeFeedStorySerializer
 
     def get_queryset(self):
@@ -258,7 +263,6 @@ class TagSearchView(generics.ListAPIView):
 
     def get_queryset(self):
         query = self.request.data.get("search")
-        # return Tag.objects.filter(tag__trigram_word_similar=query)
         return Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
 
 class GetPostFromTagView(generics.ListAPIView):
@@ -277,5 +281,4 @@ class ProfileSearchView(generics.ListAPIView):
 
     def get_queryset(self):
         query = self.request.data.get("search")
-        # return Profile.objects.filter(username__trigram_word_similar=query)
         return Profile.objects.annotate(similarity=TrigramSimilarity('username', query),).filter(similarity__gt=0.065).order_by('-similarity')
