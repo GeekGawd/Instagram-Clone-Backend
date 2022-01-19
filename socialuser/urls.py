@@ -2,7 +2,7 @@ from django.urls import path
 from socialuser.models import Comment
 
 from socialuser.views import CommentCreateView, CreatePostView, FollowRequestView, GetPostFromTagView,\
-     LikeView, HomePostView, ProfileSearchView,ProfileView, StoryView, TagSearchView,\
+     LikeView, HomePostView, ProfileSearchView, StoryView, TagSearchView,\
     UserProfileAPIView, FollowerCreateView, HomeStoryView, ProfilePostView
 
 urlpatterns = [

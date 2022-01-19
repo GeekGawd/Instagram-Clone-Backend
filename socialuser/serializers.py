@@ -44,6 +44,7 @@ class ProfileViewSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'username', 'profile_photo', 'bio', 'active_story',
                   'is_private', 'user', 'no_of_following', 'no_of_followers', 'is_follow']
+        extra_kwargs = {'username': {'required': False}}
 
     def to_representation(self, instance):
         data = super(ProfileViewSerializer, self).to_representation(instance)
