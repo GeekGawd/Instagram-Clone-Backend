@@ -171,6 +171,6 @@ class CreateUsername(APIView):
         try:
             profile = Profile.objects.get(username=username)
             return Response({"status": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
-        except:
+        except ObjectDoesNotExist:
             print(Profile.objects.get(username=username))
             return Response({"username": f"{username}"}, status=status.HTTP_201_CREATED)
