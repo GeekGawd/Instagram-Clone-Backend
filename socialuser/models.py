@@ -10,8 +10,8 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 
 class FollowManager(models.Manager):
 
-    def get_followers(self, request):
-        return self.exclude(followers=request.user).get(user=request.user).followers.all()
+    def get_following(self, request):
+        return self.get(user=request.user).user.followers.all()
 
 class StoryManager(models.Manager):
 
@@ -109,6 +109,12 @@ class Profile(Followable, Model):
     is_private = models.BooleanField(default=False)
     
     objects = FollowManager()
+
+    def no_of_following(self):
+        return len(self.user.followers.all())
+
+    def no_of_followers(self):
+        return len(self.followers.all())
 
 class Bookmark(Bookmarkable, Model):
     pass

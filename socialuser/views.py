@@ -1,4 +1,9 @@
+from calendar import day_abbr
+from ctypes.wintypes import PINT
+from socket import IPV6_CHECKSUM
+from tkinter.tix import IMMEDIATE
 from core.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.views.generic.list import ListView
 from rest_framework import generics, mixins
@@ -54,16 +59,16 @@ class CreatePostView(APIView):
         Tag.objects.extract_hashtags(post, caption)
         return Response({"status": "Post successfully created."},status=status.HTTP_201_CREATED)
         
-class PostView(generics.GenericAPIView, mixins.ListModelMixin):
+class HomePostView(generics.GenericAPIView, mixins.ListModelMixin):
     model = Post
     serializer_class = PostViewSerializer
 
     def get_queryset(self):
         posts = []
         # print(dir(Post.objects.select_related("user")))
-        for follower in Profile.objects.get_followers(self.request):
+        for follower in Profile.objects.get_following(self.request):
             try:
-                for post in Post.objects.filter(user=follower):
+                for post in Post.objects.filter(user=follower.user):
                     posts.append(post)
             except:
                 pass
@@ -99,7 +104,7 @@ class ProfileView(APIView):
         data["following"] = len(request_user_profile.user.followers.all())
         data["followers"] = len(request_user_profile.followers.all())
 
-        if Post.objects.post_authorization  (request_user_profile, session_user_profile):
+        if Post.objects.post_authorization(request_user_profile, session_user_profile):
             data["is_follow"] = True
             arr = {"profile": data, "posts": serializer2}
             return Response(arr, status=status.HTTP_200_OK)
@@ -109,7 +114,7 @@ class ProfileView(APIView):
             return Response(arr, status=status.HTTP_206_PARTIAL_CONTENT)
         
     
-class UserProfileChangeAPIView(generics.GenericAPIView,
+class UserProfileAPIView(generics.GenericAPIView,
                                mixins.RetrieveModelMixin,
                                mixins.DestroyModelMixin,
                                mixins.UpdateModelMixin):
@@ -117,17 +122,42 @@ class UserProfileChangeAPIView(generics.GenericAPIView,
     serializer_class = ProfileViewSerializer
 
     def get_object(self):
-        obj = Profile.objects.get(user=self.request.user)
+        user_id = self.request.data.get("user_id")
+        obj = Profile.objects.get(user=user_id)
         return obj
     
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
-    def put(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+class ProfilePostView(generics.ListAPIView):
+    serializer_class = PostViewSerializer
+
+    def get_queryset(self):
+        user_id = self.request.data.get("user_id")
+        if user_id:
+            try:
+                request_user_profile = Profile.objects.get(user=User.objects.get(id=user_id))
+                session_user_profile = Profile.objects.get(user=self.request.user)
+            except:
+                return Response({"status": "Request/Session User doesn't exist"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response({"status": "Enter a user_id"}, status=status.HTTP_400_BAD_REQUEST)
+        posts = Post.objects.filter(user=user_id)
+        if Post.objects.post_authorization(request_user_profile, session_user_profile):
+            return posts
+        return None
+    
+    def post(self, request, *args, **kwargs):
+        data = self.serializer_class(self.get_queryset(),many=True).data
+        if len(data):
+            return super().list(request, *args, **kwargs)
+        return Response({"status": "Profile is Private"}, status=status.HTTP_403_FORBIDDEN)
 
 class FollowerCreateView(APIView):
     serializer_class = FollowerViewSerializer
