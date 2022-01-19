@@ -1,7 +1,3 @@
-from calendar import day_abbr
-from ctypes.wintypes import PINT
-from socket import IPV6_CHECKSUM
-from tkinter.tix import IMMEDIATE
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
