@@ -167,10 +167,9 @@ class ChangePassword(APIView):
 class CreateUsername(APIView):
 
     def post(self, request, *args, **kwargs):
-        username = request.data.get("username")
+        username = request.data.get("username",)
         try:
-            profile = Profile.objects.get(username=username)
+            Profile.objects.get(username=username)
             return Response({"status": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
-        except ObjectDoesNotExist:
-            print(Profile.objects.get(username=username))
+        except:
             return Response({"username": f"{username}"}, status=status.HTTP_201_CREATED)

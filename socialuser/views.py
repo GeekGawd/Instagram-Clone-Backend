@@ -66,6 +66,8 @@ class HomePostView(generics.GenericAPIView, mixins.ListModelMixin):
     def get_queryset(self):
         posts = []
         # print(dir(Post.objects.select_related("user")))
+        print(Profile.objects.get(user=self.request.user).user.followers.all())
+        print(self.request.user)
         for follower in Profile.objects.get_following(self.request):
             try:
                 for post in Post.objects.filter(user=follower.user):
@@ -314,15 +316,18 @@ class CommentCreateView(generics.CreateAPIView):
     serializer_class = CommentSerializer
 
 
-class TagSearchView(generics.ListAPIView):
+class TagSearchView(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = TagSearchSerializer
 
     def get_queryset(self):
         query = self.request.data.get("search")
         return Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
+    
+    def post(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
-class GetPostFromTagView(generics.ListAPIView):
+class GetPostFromTagView(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = PostViewSerializer
 
     def get_queryset(self):
@@ -331,12 +336,18 @@ class GetPostFromTagView(generics.ListAPIView):
             return Tag.objects.get(tag=tag).post.all()
         except:
             return list()
+    
+    def post(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
-class ProfileSearchView(generics.ListAPIView):
+class ProfileSearchView(generics.GenericAPIView, mixins.ListModelMixin):
     model = Profile
     serializer_class = ProfileSearchSerializer
 
     def get_queryset(self):
         query = self.request.data.get("search")
         return Profile.objects.annotate(similarity=TrigramSimilarity('username', query),).filter(similarity__gt=0.065).order_by('-similarity')
+    
+    def post(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
