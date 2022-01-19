@@ -48,14 +48,13 @@ class ProfileViewSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super(ProfileViewSerializer, self).to_representation(instance)
-        # try:
         data['user_name'] = instance.user.name
         
         return data
 
     def get_is_follow(self, instance):
         request = self.context.get("request")
-        if self.context.get("request").method=="GET":
+        if self.context.get("request").method=="POST":
             user_id = request.data.get('user_id')
             request_user_profile = Profile.objects.get(
                                                 user=User.objects.get(id=user_id)

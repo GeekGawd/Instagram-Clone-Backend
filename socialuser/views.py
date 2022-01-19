@@ -125,14 +125,14 @@ class UserProfileAPIView(generics.GenericAPIView,
     def get_object(self):
 
         user_id = self.request.data.get("user_id")
-        if self.request.method=="GET":
+        if self.request.method=="POST":
             obj = Profile.objects.get(user=user_id)
         else:
             obj = Profile.objects.get(user=self.request.user.id)
 
         return obj
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             Profile.objects.get(user=request.data.get("user_id"))
         except ObjectDoesNotExist:
