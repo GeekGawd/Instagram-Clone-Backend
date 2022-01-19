@@ -1,5 +1,3 @@
-from tkinter.tix import Tree
-from urllib import request
 from django.db.models import fields
 from django.db.models.fields.related import ForeignKey
 from rest_framework import serializers
