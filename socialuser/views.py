@@ -14,6 +14,8 @@ from socialuser.serializers import CommentSerializer, FollowRequestSerializer, F
     LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
     ProfileViewSerializer, StorySerializer, TagSearchSerializer
 from django.contrib.postgres.search import TrigramSimilarity
+from django.core.exceptions import ObjectDoesNotExist
+
 
 # Create your views here.
 
@@ -121,15 +123,25 @@ class UserProfileAPIView(generics.GenericAPIView,
     serializer_class = ProfileViewSerializer
 
     def get_object(self):
+
         user_id = self.request.data.get("user_id")
-        obj = Profile.objects.get(user=user_id)
+        if self.request.method=="GET":
+            obj = Profile.objects.get(user=user_id)
+        else:
+            obj = Profile.objects.get(user=self.request.user.id)
+
         return obj
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
+        try:
+            Profile.objects.get(user=request.data.get("user_id"))
+        except ObjectDoesNotExist:
+            return Response({"User is not registered"}, status=status.HTTP_400_BAD_REQUEST)
         return super().retrieve(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+    def delete(self, request):
+        User.objects.get(id=request.user.id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
