@@ -20,15 +20,14 @@ class CreateUserView(generics.GenericAPIView, mixins.CreateModelMixin):
         email = request.data.get("email")
         try:
             profile = Profile.objects.get(username=username)
-            if profile.user:
-                return Response({"status": "Username already Taken."}, status=status.HTTP_409_CONFLICT)    
-            else:
-                serializer = self.serializer_class(data=request.data)
-                if serializer.is_valid(raise_exception=True):
-                    user = serializer.save()
-                profile.user = user
-                profile.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({"status": "Username already Taken."}, status=status.HTTP_409_CONFLICT)    
+            # else:
+            #     serializer = self.serializer_class(data=request.data)
+            #     if serializer.is_valid(raise_exception=True):
+            #         user = serializer.save()
+            #     profile.user = user
+            #     profile.save()
+            #     return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ObjectDoesNotExist:
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -164,23 +163,14 @@ class ChangePassword(APIView):
             user.save()
             return Response(user.tokens(),status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED) 
-        
-class Test(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        return Response("Hello")
+class CreateUsername(APIView):
 
-class CreateUsername(generics.GenericAPIView, mixins.CreateModelMixin):
-    serializer_class = CreateUsernameSerializer
-    
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         try:
             profile = Profile.objects.get(username=username)
-            if profile.user:
-                raise BadRequest("Username already Taken.")
-            else:
-                return Response({"username": f"{username}"}, status=status.HTTP_201_CREATED)
+            return Response({"status": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
         except:
-            return super(CreateUsername, self).create(request, *args, **kwargs)
+            print(Profile.objects.get(username=username))
+            return Response({"username": f"{username}"}, status=status.HTTP_201_CREATED)
