@@ -1,6 +1,7 @@
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from django.views.generic.list import ListView
 from rest_framework import generics, mixins
 from rest_framework import serializers, status
@@ -154,24 +155,21 @@ class ProfilePostView(generics.ListAPIView):
 
     def get_queryset(self):
         user_id = self.request.data.get("user_id")
-        if user_id:
-            try:
-                request_user_profile = Profile.objects.get(
-                    user=User.objects.get(id=user_id))
-                session_user_profile = Profile.objects.get(
-                    user=self.request.user)
-            except:
-                return Response({"status": "Request/Session User doesn't exist"}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        else:
-            return Response({"status": "Enter a user_id"}, status=status.HTTP_400_BAD_REQUEST)
         posts = Post.objects.filter(user=user_id)
-        if Post.objects.post_authorization(request_user_profile, session_user_profile):
-            return posts
-        return None
+        return posts
 
     def post(self, request, *args, **kwargs):
-        data = self.serializer_class(self.get_queryset(), many=True).data
-        if len(data):
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"status": "Enter a user_id"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            request_user_profile = Profile.objects.get(
+                user=User.objects.get(id=user_id))
+            session_user_profile = Profile.objects.get(
+                user=request.user)
+        except:
+            return Response({"status": "Request/Session User doesn't exist"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        if Post.objects.post_authorization(request_user_profile, session_user_profile):
             return super().list(request, *args, **kwargs)
         return Response({"status": "Profile is Private"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -245,36 +243,40 @@ class StoryView(generics.GenericAPIView,
     serializer_class = StorySerializer
 
     def get_queryset(self):
-        try:
-            user_id = self.request.data['user_id']
-        except:
-            return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
-        return Story.objects.filter(profile=Profile.objects.get(user=user_id), is_expired=False).order_by('-id')
-
-    def get_object(self):
-        try:
-            story_id = self.request.data['story_id']
-        except:
-            return Response({"Enter story id to delete story."}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Story.objects.get(id=story_id)
+        user_id = self.request.data.get("user_id")
+        qs = Story.objects.filter(user=User.objects.get(id=user_id),created_at__gte = timezone.now() - timezone.timedelta(days=1)).order_by('-id')
+        qs.update(is_seen=True)
+        return qs
 
     def get(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        try:
+            self.request.data['user_id']
+            return super().list(request, *args, **kwargs)
+        except KeyError:
+            return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
         return super().create(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+        story_id = request.data.get("story_id")   
+        if story_id:
+            try:
+                Story.objects.get(id=story_id).delete()
+                return Response({"status": "Story Deleted Successfully."}, status=status.HTTP_205_RESET_CONTENT)
+            except ObjectDoesNotExist:
+                return Response({"status": "Story does not exist"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"status": "Enter a story id."}, status=status.HTTP_400_BAD_REQUEST)
+        
 
 
 class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin):
     serializer_class = HomeFeedStorySerializer
 
     def get_queryset(self):
-        qs = Story.objects.get_story(self.request)
-        stories = [story.profile for story in qs]
+        qs = Profile.objects.get(user=self.request.user.id).user.followers.all()
+        stories = [profile for profile in qs if len(profile.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1))) > 0]
         return stories
 
     def get(self, request, *args, **kwargs):
@@ -302,7 +304,7 @@ class LikeView(APIView):
                 post.liked_by.add(request.user)
                 return Response({"status": "Post Liked Successfully."}, status=status.HTTP_201_CREATED)
 
-        if comment:
+        elif comment:
             try:
                 comment.liked_by.get(id=request.user.id)
                 comment.liked_by.remove(id=request.user.id)
@@ -321,6 +323,7 @@ class TagSearchView(generics.GenericAPIView, mixins.ListModelMixin):
 
     def get_queryset(self):
         query = self.request.data.get("search")
+        qs = Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
         return Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
     
     def post(self, request, *args, **kwargs):
@@ -333,7 +336,10 @@ class GetPostFromTagView(generics.GenericAPIView, mixins.ListModelMixin):
     def get_queryset(self):
         tag = self.request.data.get("tag")
         try:
-            return Tag.objects.get(tag=tag).post.all()
+            qs = Tag.objects.get(tag=tag).post.all()
+            session_profile = Profile.objects.get(user=self.request.user)
+            posts = [post for post in qs if Post.objects.post_authorization(post.user.profile, session_profile)]
+            return posts
         except:
             return list()
     

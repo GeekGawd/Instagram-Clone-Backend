@@ -117,7 +117,6 @@ class Profile(Followable, Model):
     profile_photo = models.URLField(default="https://firebasestorage.googleapis.com/v0/b/connect-dac36.appspot.com/o/images%2Ff7bdfca0-b8d2-4c1e-b686-1a8e9465d437?alt=media&token=ec3d49f5-402c-40fb-abc4-0f3616eb0ac4",
                                     null=True, blank=True)
     bio = models.CharField(max_length=150, null=True, blank=True)
-    active_story = models.BooleanField(default=False)
     is_private = models.BooleanField(default=False)     
 
     objects = FollowManager()
@@ -127,7 +126,17 @@ class Profile(Followable, Model):
 
     def no_of_followers(self):
         return len(self.followers.all())
-
+    
+    @property
+    def active_story(self):
+        no_of_active_story = len(self.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)))
+        no_of_unseen_story = len(self.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1), is_seen = False))
+        if no_of_active_story > 0 and no_of_unseen_story>0:
+            return 2
+        elif no_of_active_story > 0:
+            return 1
+        else:
+            return 0
 
 class Bookmark(Bookmarkable, Model):
     pass
@@ -141,9 +150,9 @@ class FollowRequest(Model):
 
 
 class Story(Creatable, Model):
-    profile = ForeignKey(Profile, on_delete=models.CASCADE)
-    content = models.FileField(upload_to="story/")
-    is_expired = models.BooleanField(default=False)
+    user = ForeignKey("core.User", on_delete=models.CASCADE, related_name="userstory")
+    content = models.URLField()
+    is_seen = models.BooleanField(default=False)
 
     objects = StoryManager()
 

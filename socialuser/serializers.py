@@ -147,7 +147,7 @@ class HomeFeedStorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['profile_photo', 'active_story', 'user']
+        fields = ['profile_photo', 'active_story', 'user', 'username']
 
 
 class TagSearchSerializer(serializers.ModelSerializer):
@@ -155,6 +155,13 @@ class TagSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['id', 'tag', 'no_of_posts']
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data.get("no_of_posts")==0:
+            instance.delete()
+            data.update({"id":None,"tag": None,"no_of_posts": None})
+        return data
 
 
 class ProfileSearchSerializer(serializers.ModelSerializer):
