@@ -1,5 +1,3 @@
-from distutils.errors import CompileError
-from turtle import st
 from django.http import request
 from core.models import User
 from django.core.exceptions import ValidationError
@@ -191,7 +189,7 @@ class FollowerCreateView(APIView):
             return Response({"status": "You cannot follow yourself."}, status=status.HTTP_406_NOT_ACCEPTABLE)
         if request_user_profile.followers.filter(id=request.user.id).exists():
             request_user_profile.followers.remove(request.user)
-            return Response({"status": "User Unfollowed"}, status=status.HTTP_205_RESET_CONTENT)
+            return Response({"status": "User Unfollowed"}, status=status.HTTP_208_ALREADY_REPORTED)
 
         elif not request_user_profile.is_private:
             request_user_profile.followers.add(request.user)
