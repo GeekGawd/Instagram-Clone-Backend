@@ -39,6 +39,7 @@ class VideoViewSerializer(serializers.ModelSerializer):
 
 class ProfileViewSerializer(serializers.ModelSerializer):
     is_follow = serializers.SerializerMethodField()
+    active_story = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -66,6 +67,20 @@ class ProfileViewSerializer(serializers.ModelSerializer):
                 return True
             else:
                 return False
+    
+    def get_active_story(self, instance):
+        request = self.context.get("request")
+        user_id = request.data.get("user_id")
+        request_user_profile = Profile.objects.get(user=user_id)
+        session_user_profile = Profile.objects.get(user=request.user.id)
+        no_of_active_story = len(instance.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)))
+        no_of_unseen_story = len(instance.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1), is_seen = False))
+        if no_of_active_story > 0 and no_of_unseen_story>0 and Post.objects.post_authorization(request_user_profile, session_user_profile):
+            return 2
+        elif no_of_active_story > 0 and Post.objects.post_authorization(request_user_profile, session_user_profile):
+            return 1
+        else:
+            return 0
 
 
 class FollowerViewSerializer(serializers.ModelSerializer):

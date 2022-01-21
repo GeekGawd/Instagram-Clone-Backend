@@ -1,3 +1,4 @@
+from django.http import request
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -178,19 +179,18 @@ class FollowerCreateView(APIView):
     serializer_class = FollowerViewSerializer
 
     def put(self, request):
-        profile = Profile.objects.get(user=request.user)
+        session_user_profile = Profile.objects.get(user=request.user)
         user_id = request.data.get("user_id")
-        request_user_profile, _ = Profile.objects.get_or_create(
-            user=User.objects.get(id=user_id))
+        request_user_profile = Profile.objects.get(user=User.objects.get(id=user_id))
 
         if user_id == request.user.id:
-            return Response({"status": "You cannot follow yourself."}, status=status.HTTP_403_FORBIDDEN)
-        if profile.followers.filter(id=request_user_profile.user.id).exists():
-            profile.followers.remove(request_user_profile.user)
-            return Response({"status": "User Unfollowed"}, status=status.HTTP_202_ACCEPTED)
+            return Response({"status": "You cannot follow yourself."}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        if request_user_profile.followers.filter(id=request.user.id).exists():
+            request_user_profile.followers.remove(request.user)
+            return Response({"status": "User Unfollowed"}, status=status.HTTP_205_RESET_CONTENT)
 
         elif not request_user_profile.is_private:
-            profile.followers.add(request_user_profile.user)
+            request_user_profile.followers.add(request.user)
             return Response({"status": "User followed"}, status=status.HTTP_200_OK)
 
         else:
@@ -198,7 +198,7 @@ class FollowerCreateView(APIView):
                 follow_request = FollowRequest.objects.get(from_user=request.user,
                                                            to_user=request_user_profile.user)
                 follow_request.delete()
-                return Response({"status": "Follow Request Removed."}, status=status.HTTP_205_RESET_CONTENT)
+                return Response({"status": "Follow Request Removed."}, status=status.HTTP_206_PARTIAL_CONTENT)
             except:
                 FollowRequest.objects.create(from_user=request.user,
                                              to_user=request_user_profile.user)
@@ -222,18 +222,18 @@ class FollowRequestView(APIView):
         try:
             follow_request = FollowRequest.objects.get(id=follow_id)
         except:
-            return Response({"status": "No Follow Request has been sent."})
+            return Response({"status": "No Follow Request has been sent."}, status=status.HTTP_404_NOT_FOUND)
 
         if confirmation.casefold() == "true":
             Profile.objects.get(user=follow_request.to_user).followers.add(
                 follow_request.from_user)
             follow_request.delete()
-            return Response({"status": "Follow Request Accepted."})
+            return Response({"status": "Follow Request Accepted."}, status=status.HTTP_206_PARTIAL_CONTENT)
         elif confirmation.casefold() == "false":
             follow_request.delete()
-            return Response({"status": "Follow Request Rejected."})
+            return Response({"status": "Follow Request Rejected."}, status=status.HTTP_226_IM_USED)
         else:
-            return Response({"status": "Enter a valid confirmation."})
+            return Response({"status": "Enter a valid confirmation."}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
 class StoryView(generics.GenericAPIView,
@@ -250,8 +250,13 @@ class StoryView(generics.GenericAPIView,
 
     def get(self, request, *args, **kwargs):
         try:
-            self.request.data['user_id']
-            return super().list(request, *args, **kwargs)
+            user_id = self.request.data['user_id']
+            request_user_profile = Profile.objects.get(user=user_id)
+            session_user_profile = Profile.objects.get(user=self.request.user.id)
+            if Post.objects.post_authorization(request_user_profile, session_user_profile):
+                return super().list(request, *args, **kwargs)
+            else:
+                return Response({"status": "Profile is Private"}, status=status.HTTP_406_NOT_ACCEPTABLE)
         except KeyError:
             return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
 
