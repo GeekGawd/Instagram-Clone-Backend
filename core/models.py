@@ -1,3 +1,4 @@
+from random import choice
 import re
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -9,6 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from socialuser.models import Profile
 from core.behaviours import Authorable
 from django.contrib.auth.models import User
+
+NOTIFICATION_TYPE = (('1', 'Follow'), ('2', 'Comment'), ('3', 'Like'))
 
 
 class UserManager(BaseUserManager):
@@ -68,12 +71,14 @@ class OTP(models.Model):
         return f"{self.otp_email} : {self.otp}"
 
 class Notification(models.Model):
+
     post = models.ForeignKey('socialuser.Post', on_delete=models.CASCADE, related_name="noti_post", blank=True, null=True)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="noti_from_user")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="noti_to_user")
     text = models.TextField(max_length=250)
     date = models.DateTimeField(auto_now_add=True)
     is_seen = models.BooleanField(default=False)
+    noti_type = models.CharField(choices=NOTIFICATION_TYPE, max_length=25)
 
     def __str__(self) -> str:
         return f"{self.user}-->{self.text}"

@@ -1,3 +1,4 @@
+from cmath import isnan
 from django.db.models import fields
 from django.db.models.fields.related import ForeignKey
 from rest_framework import serializers
@@ -95,7 +96,19 @@ class FollowRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = FollowRequest
         fields = '__all__'
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        profile_from_user = Profile.objects.get(user=instance.from_user)
+        profile_to_user = Profile.objects.get(user=instance.to_user)
+        data['from_user_username']=profile_from_user.username
+        data['to_user_username']=profile_to_user.username
+        data['from_user_profile_photo']=profile_from_user.profile_photo
+        data['to_user_profile_photo']=profile_to_user.profile_photo
+        return data
 
+
+    
 
 class StorySerializer(serializers.ModelSerializer):
 
@@ -130,7 +143,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ['comment', 'comment_by', 'post']
 
 # class MediaSerializer(serializers.ModelSerializer):
 

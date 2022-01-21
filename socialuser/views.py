@@ -1,3 +1,5 @@
+from distutils.errors import CompileError
+from turtle import st
 from django.http import request
 from core.models import User
 from django.core.exceptions import ValidationError
@@ -10,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
+from core.signals import deleteCommentNotification
 from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
 from socialuser.serializers import CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
     FollowerViewSerializer, HomeFeedStorySerializer,\
@@ -181,6 +184,7 @@ class FollowerCreateView(APIView):
     def put(self, request):
         session_user_profile = Profile.objects.get(user=request.user)
         user_id = request.data.get("user_id")
+        print(User.objects.get(id=user_id))
         request_user_profile = Profile.objects.get(user=User.objects.get(id=user_id))
 
         if user_id == request.user.id:
@@ -319,8 +323,32 @@ class LikeView(APIView):
                 return Response({"status": "Post Liked Successfully."}, status=status.HTTP_201_CREATED)
 
 
-class CommentCreateView(generics.CreateAPIView):
+class CommentCreateView(generics.GenericAPIView, mixins.ListModelMixin,
+                         mixins.CreateModelMixin, mixins.DestroyModelMixin):
     serializer_class = CommentSerializer
+
+    def get_object(self):
+        comment_id = self.request.data.get("comment_id")
+        return Comment.objects.get(id=comment_id)
+    
+    def get_queryset(self):
+        post_id = self.request.data.get("post_id")
+        comments = Post.objects.get(id=post_id).prefetch_related("comment")
+        return comments
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            request.data['post_id']
+        except KeyError:
+            return Response({"status": "Enter a post id to view comments"}, status=status.HTTP_400_BAD_REQUEST)
+        return super().list(request, *args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        request.data.update({"comment_by": request.user.id})
+        return super().create(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class TagSearchView(generics.GenericAPIView, mixins.ListModelMixin):
