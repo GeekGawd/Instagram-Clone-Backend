@@ -1,3 +1,5 @@
+from os import stat
+from turtle import st
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -138,7 +140,8 @@ class UserProfileAPIView(generics.GenericAPIView,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+        self.update(request, *args, **kwargs)
+        return Response({"status": "Profile Updated Successfully."}, status=status.HTTP_200_OK)
 
 
 class ProfilePostView(generics.ListAPIView):
