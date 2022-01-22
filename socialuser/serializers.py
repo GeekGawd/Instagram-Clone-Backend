@@ -33,13 +33,13 @@ class VideoViewSerializer(serializers.ModelSerializer):
 class ProfileViewSerializer(serializers.ModelSerializer):
     is_follow = serializers.SerializerMethodField()
     active_story = serializers.SerializerMethodField()
-    follow_request_sent = serializers.SerializerMethodField()
+    follow = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = ['id', 'username', 'profile_photo', 'bio', 'active_story',
                   'is_private', 'user', 'no_of_following', 'no_of_followers',
-                  'is_follow', 'follow_request_sent']
+                  'is_follow', 'follow']
         extra_kwargs = {'username': {'required': False}}
 
     def to_representation(self, instance):
@@ -78,14 +78,14 @@ class ProfileViewSerializer(serializers.ModelSerializer):
                 return 1
             else:
                 return 0
-    def get_follow_request_sent(self, instance):
+    def get_follow(self, instance):
         if self.context.get("request").method=="POST":
             request = self.context.get("request")
             user_id = request.data.get("user_id")
             request_user_profile = Profile.objects.get(user=user_id)
             session_user_profile = Profile.objects.get(user=request.user.id)
             if FollowRequest.objects.filter(to_user=request_user_profile.user,
-                                                from_user=session_user_profile.user).exists():
+                                                from_user=session_user_profile.user).exists() or request_user_profile.followers.filter(id=request.user.id).exists():
                 return True
             else:
                 return False
