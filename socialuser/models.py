@@ -1,5 +1,4 @@
 import re
-from statistics import mode
 from django.db.models import fields, UniqueConstraint
 from django.db.models.base import Model
 from django.db.models.fields import BooleanField, TextField

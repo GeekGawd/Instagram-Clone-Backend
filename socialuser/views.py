@@ -1,6 +1,3 @@
-from os import stat
-from turtle import st
-from django.http import request
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -11,8 +8,6 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
-from core.signals import deleteCommentNotification
 from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
 from socialuser.serializers import CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
     FollowerViewSerializer, HomeFeedStorySerializer,\
