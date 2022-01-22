@@ -1,6 +1,3 @@
-from os import stat
-from turtle import st
-from xmlrpc.client import FastParser
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
