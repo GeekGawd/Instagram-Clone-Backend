@@ -102,8 +102,7 @@ class Profile(Followable, Model):
             'unique': ("A user with that username already exists."),
         },
     )
-    profile_photo = models.URLField(default="https://firebasestorage.googleapis.com/v0/b/connect-dac36.appspot.com/o/images%2Ff7bdfca0-b8d2-4c1e-b686-1a8e9465d437?alt=media&token=ec3d49f5-402c-40fb-abc4-0f3616eb0ac4",
-                                    null=True, blank=True)
+    profile_photo = models.URLField(null=True, blank=True)
     bio = models.CharField(max_length=150, null=True, blank=True)
     is_private = models.BooleanField(default=False)     
 

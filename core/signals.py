@@ -29,12 +29,12 @@ def remove_follower(sender, instance, **kwargs):
                 sender=User.objects.get(id=follower), user=instance.user, noti_type=1)
             notify.delete()
 
-@receiver(post_save, sender=Profile)
-def defaultProfileImage(sender, instance, **kwargs):
-    DEFAULT = "https://firebasestorage.googleapis.com/v0/b/connect-dac36.appspot.com/o/images%2Ff7bdfca0-b8d2-4c1e-b686-1a8e9465d437?alt=media&token=ec3d49f5-402c-40fb-abc4-0f3616eb0ac4"
-    if instance.profile_photo is None:
-        instance.profile_photo = DEFAULT
-        instance.save()
+# @receiver(post_save, sender=Profile)
+# def defaultProfileImage(sender, instance, **kwargs):
+#     DEFAULT = "https://firebasestorage.googleapis.com/v0/b/connect-dac36.appspot.com/o/images%2Ff7bdfca0-b8d2-4c1e-b686-1a8e9465d437?alt=media&token=ec3d49f5-402c-40fb-abc4-0f3616eb0ac4"
+#     if instance.profile_photo is None:
+#         instance.profile_photo = DEFAULT
+#         instance.save()
 
 @receiver(post_init, sender=Comment)
 def commentNotification(sender,instance, **kwargs):
