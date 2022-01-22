@@ -1,4 +1,5 @@
 import re
+from statistics import mode
 from django.db.models import fields, UniqueConstraint
 from django.db.models.base import Model
 from django.db.models.fields import BooleanField, TextField
@@ -139,7 +140,6 @@ class FollowRequest(Model):
 
 class Story(Creatable, Model):
     user = ForeignKey("core.User", on_delete=models.CASCADE, related_name="userstory")
-    content = models.URLField()
     is_seen = models.BooleanField(default=False)
 
     objects = StoryManager()
@@ -159,9 +159,11 @@ class Tag(models.Model):
 
 class Image(Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, blank=True, null=True)
     images = models.URLField(max_length=200)
 
 
 class Video(Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, blank=True, null=True)
     videos = models.URLField(max_length=200)

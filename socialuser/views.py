@@ -1,3 +1,5 @@
+from os import stat
+from turtle import st
 from django.http import request
 from core.models import User
 from django.core.exceptions import ValidationError
@@ -15,7 +17,7 @@ from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Imag
 from socialuser.serializers import CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
     FollowerViewSerializer, HomeFeedStorySerializer,\
     LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
-    ProfileViewSerializer, StorySerializer, TagSearchSerializer
+    ProfileViewSerializer, StorySerializer, TagSearchSerializer, StoryViewSerializer
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -235,29 +237,9 @@ class FollowRequestView(APIView):
 
 class StoryView(generics.GenericAPIView,
                 mixins.CreateModelMixin,
-                mixins.ListModelMixin,
                 mixins.DestroyModelMixin):
     permission_classes = [IsAuthenticated]
     serializer_class = StorySerializer
-
-    def get_queryset(self):
-        user_id = self.request.data.get("user_id")
-        qs = Story.objects.filter(user=User.objects.get(id=user_id),
-            created_at__gte = timezone.now() - timezone.timedelta(days=1)).order_by('-id')
-        qs.update(is_seen=True)
-        return qs
-
-    def get(self, request, *args, **kwargs):
-        try:
-            user_id = self.request.data['user_id']
-            request_user_profile = Profile.objects.get(user=user_id)
-            session_user_profile = Profile.objects.get(user=self.request.user.id)
-            if Post.objects.post_authorization(request_user_profile, session_user_profile):
-                return super().list(request, *args, **kwargs)
-            else:
-                return Response({"status": "Profile is Private"}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        except KeyError:
-            return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, *args, **kwargs):
         request.data.update({"user":request.user.id})
@@ -302,7 +284,7 @@ class LikeView(APIView):
         comment = Comment.objects.filter(id=comment_id).first()
 
         if not post and not comment:
-            return Response({"status": "Enter a post/comment id to like"})
+            return Response({"status": "Enter a post/comment id to like"}, status=status.HTTP_400_BAD_REQUEST)
 
         if post:
             try:
@@ -393,3 +375,27 @@ class ProfileSearchView(generics.GenericAPIView, mixins.ListModelMixin):
     
     def post(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+class GetStoryView(generics.GenericAPIView, mixins.ListModelMixin):
+    permission_classes = [IsAuthenticated]
+    model = Post
+    serializer_class = StoryViewSerializer
+
+    def get_queryset(self):
+        user_id = self.request.data.get("user_id")
+        qs = Story.objects.filter(user=User.objects.get(id=user_id),
+            created_at__gte = timezone.now() - timezone.timedelta(days=1)).order_by('-id')
+        qs.update(is_seen=True)
+        return qs
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user_id = self.request.data['user_id']
+            request_user_profile = Profile.objects.get(user=user_id)
+            session_user_profile = Profile.objects.get(user=self.request.user.id)
+            if Post.objects.post_authorization(request_user_profile, session_user_profile):
+                return super().list(request, *args, **kwargs)
+            else:
+                return Response({"status": "Profile is Private"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        except KeyError:
+            return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)

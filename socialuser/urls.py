@@ -3,7 +3,7 @@ from socialuser.models import Comment
 
 from socialuser.views import CommentCreateView, CreatePostView, FollowRequestView, GetPostFromTagView,\
      LikeView, HomePostView, ProfileSearchView, StoryView, TagSearchView,\
-    UserProfileAPIView, FollowerCreateView, HomeStoryView, ProfilePostView
+    UserProfileAPIView, FollowerCreateView, HomeStoryView, ProfilePostView, GetStoryView
 
 urlpatterns = [
     path('post/create/', CreatePostView.as_view(), name='postcreate'),
@@ -16,6 +16,7 @@ urlpatterns = [
     path('follow/', FollowRequestView.as_view(), name='follow-request'),
     path('home/story/', HomeStoryView.as_view(), name='home-story'),
     path('story/', StoryView.as_view(), name='story'),
+    path('story/get/', GetStoryView.as_view(), name='story'),
     path('post/like/', LikeView.as_view(), name='story'),
     path('post/comment/', CommentCreateView.as_view(), name='story'),
     path('search/tag/', TagSearchView.as_view(), name='tag-search'),

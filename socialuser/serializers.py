@@ -244,4 +244,18 @@ class PostSerializer(serializers.ModelSerializer):
         Tag.objects.extract_hashtags(post, caption)
         
         return post
-    
+
+class StoryViewSerializer(serializers.ModelSerializer):
+    post_image = ImageViewSerializer(many=True, source='image_set')
+    post_video = VideoViewSerializer(many=True, source='video_set')
+
+    class Meta:
+        model = Story
+        fields = ['post_image', 'post_video','is_seen',
+                    'user', 'id']
+
+    def to_representation(self, instance):
+        data = super(StoryViewSerializer, self).to_representation(instance)
+        data['user_name'] = instance.user.profile.username
+        data['profile_picture'] = instance.user.profile.profile_photo
+        return data
