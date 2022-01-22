@@ -23,46 +23,41 @@ from django.core.exceptions import ObjectDoesNotExist
 # Create your views here.
 
 
-class CreatePostView(APIView):
-    permission_classes = [IsAuthenticated]
+# class CreatePostView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     serializer_class = PostSerializer
+
+#     def post(self, request):
+#         photos = request.data['photos']
+#         videos = request.data['videos']
+#         caption = request.data.get("caption")
+
+#         try:
+#             request.data['user'] = request.user.id
+#         except:
+#             return Response({"status": "User not registered."}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         serializer = self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             post = serializer.save()
+
+#         if photos is None and videos is None:
+#             return Response({"status": "Cannot create post with no media."}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+#         return Response({"status": "Post successfully created."}, status=status.HTTP_201_CREATED)
+
+class CreatePostView(generics.CreateAPIView):
     serializer_class = PostSerializer
 
-    def post(self, request):
-        photos = request.data['photos']
-        videos = request.data['videos']
-        caption = request.data.get("caption")
-
-        try:
-            request.data['user'] = request.user.id
-        except:
-            return Response({"status": "User not registered."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            post = serializer.save()
-
-        if photos is None and videos is None:
-            return Response({"status": "Cannot create post with no media."}, status=status.HTTP_406_NOT_ACCEPTABLE)
-
-        if photos is None:
-            photos = []
-
-        if videos is None:
-            videos = []
-
-        if isinstance(photos, list):
-            img = [Image(post=post, images=photo) for photo in photos]
-            Image.objects.bulk_create(img)
-
-        if isinstance(videos, list):
-            vdo = [Video(post=post, videos=video) for video in videos]
-            Video.objects.bulk_create(vdo)
-
-        Tag.objects.extract_hashtags(post, caption)
-        return Response({"status": "Post successfully created."}, status=status.HTTP_201_CREATED)
-
+    def post(self, request, *args, **kwargs):
+        request.data.update({"user":request.user.id})
+        if request.data.get("photos") or request.data.get("videos"):
+            return super().post(request, *args, **kwargs)
+        else:
+            return Response({"status": "You cannot create a post with no media"}, status=status.HTTP_400_BAD_REQUEST)
 
 class HomePostView(generics.GenericAPIView, mixins.ListModelMixin):
+    permission_classes = [IsAuthenticated]
     model = Post
     serializer_class = PostViewSerializer
 
@@ -72,11 +67,8 @@ class HomePostView(generics.GenericAPIView, mixins.ListModelMixin):
         print(Profile.objects.get(user=self.request.user).user.followers.all())
         print(self.request.user)
         for follower in Profile.objects.get_following(self.request):
-            try:
-                for post in Post.objects.filter(user=follower.user):
-                    posts.append(post)
-            except:
-                pass
+            for post in Post.objects.filter(user=follower.user):
+                posts.append(post)
         return posts
 
     def get(self, request, *args, **kwargs):
@@ -153,6 +145,7 @@ class UserProfileAPIView(generics.GenericAPIView,
 
 
 class ProfilePostView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = PostViewSerializer
 
     def get_queryset(self):
@@ -177,6 +170,7 @@ class ProfilePostView(generics.ListAPIView):
 
 
 class FollowerCreateView(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = FollowerViewSerializer
 
     def put(self, request):
@@ -208,6 +202,7 @@ class FollowerCreateView(APIView):
 
 
 class FollowRequestView(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = FollowRequestSerializer
 
     def get(self, request):
@@ -239,14 +234,16 @@ class FollowRequestView(APIView):
 
 
 class StoryView(generics.GenericAPIView,
+                mixins.CreateModelMixin,
                 mixins.ListModelMixin,
-                mixins.DestroyModelMixin,
-                mixins.CreateModelMixin):
+                mixins.DestroyModelMixin):
+    permission_classes = [IsAuthenticated]
     serializer_class = StorySerializer
 
     def get_queryset(self):
         user_id = self.request.data.get("user_id")
-        qs = Story.objects.filter(user=User.objects.get(id=user_id),created_at__gte = timezone.now() - timezone.timedelta(days=1)).order_by('-id')
+        qs = Story.objects.filter(user=User.objects.get(id=user_id),
+            created_at__gte = timezone.now() - timezone.timedelta(days=1)).order_by('-id')
         qs.update(is_seen=True)
         return qs
 
@@ -263,8 +260,11 @@ class StoryView(generics.GenericAPIView,
             return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, *args, **kwargs):
-        request.data['user'] = request.user.id
-        return super().create(request, *args, **kwargs)
+        request.data.update({"user":request.user.id})
+        if request.data.get("photos") or request.data.get("videos"):
+            return super().create(request, *args, **kwargs)
+        else:
+            return Response({"status": "You cannot create a post with no media"}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
         story_id = request.data.get("story_id")   
@@ -278,7 +278,8 @@ class StoryView(generics.GenericAPIView,
         
 
 
-class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin):
+class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin):
+    permission_classes = [IsAuthenticated]
     serializer_class = HomeFeedStorySerializer
 
     def get_queryset(self):
@@ -291,6 +292,7 @@ class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin, mixins.Creat
 
 
 class LikeView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def put(self, request):
 
@@ -315,15 +317,16 @@ class LikeView(APIView):
             try:
                 comment.liked_by.get(id=request.user.id)
                 comment.liked_by.remove(id=request.user.id)
-                return Response({"status": "Post UnLiked Successfully."}, status=status.HTTP_202_ACCEPTED)
+                return Response({"status": "Comment UnLiked Successfully."}, status=status.HTTP_202_ACCEPTED)
             except:
                 comment.liked_by.add(request.user)
-                return Response({"status": "Post Liked Successfully."}, status=status.HTTP_201_CREATED)
+                return Response({"status": "Comment Liked Successfully."}, status=status.HTTP_201_CREATED)
 
 
 class CommentCreateView(generics.GenericAPIView, mixins.ListModelMixin,
                          mixins.CreateModelMixin, mixins.DestroyModelMixin):
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         comment_id = self.request.data.get("comment_id")
@@ -351,10 +354,10 @@ class CommentCreateView(generics.GenericAPIView, mixins.ListModelMixin,
 
 class TagSearchView(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = TagSearchSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         query = self.request.data.get("search")
-        qs = Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
         return Tag.objects.annotate(similarity=TrigramSimilarity('tag', query),).filter(similarity__gt=0.15).order_by('-similarity')
     
     def post(self, request, *args, **kwargs):
@@ -363,6 +366,7 @@ class TagSearchView(generics.GenericAPIView, mixins.ListModelMixin):
 
 class GetPostFromTagView(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = PostViewSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         tag = self.request.data.get("tag")
@@ -381,6 +385,7 @@ class GetPostFromTagView(generics.GenericAPIView, mixins.ListModelMixin):
 class ProfileSearchView(generics.GenericAPIView, mixins.ListModelMixin):
     model = Profile
     serializer_class = ProfileSearchSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         query = self.request.data.get("search")

@@ -5,15 +5,7 @@ from rest_framework import serializers
 from core.models import *
 import socialuser
 from socialuser.models import Comment, FollowRequest, Post, Profile, Story, Image, Tag, Video
-
-
-class PostSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Post
-        fields = ['caption', 'user']
-        extra_kwargs = {
-            'caption': {'required': False}
-        }
+from rest_framework.fields import empty
 
 
 # class ImageSerializer(serializers.ModelSerializer):
@@ -116,6 +108,24 @@ class StorySerializer(serializers.ModelSerializer):
         model = Story
         exclude = ['created_at']
 
+    def create(self, validated_data):
+        image_data = self.initial_data.get('photos')
+        video_data = self.initial_data.get('videos')
+        story = Story.objects.create(**validated_data)
+
+        if image_data is not None and isinstance(image_data, list):
+            images = [Image(story=story, images=photo) for photo in image_data]
+            Image.objects.bulk_create(images)
+        elif image_data is not None and isinstance(image_data, str):
+            Image.objects.create(story=story, images=image_data)
+
+        if video_data is not None and isinstance(video_data, list):
+            videos = [Video(story=story, videos=video) for video in video_data]
+            Video.objects.bulk_create(videos)
+        elif video_data is not None and  isinstance(video_data, str):
+            Video.objects.create(story=story, videos=video_data)
+        
+        return story
 
 class LikePostSerializer(serializers.ModelSerializer):
 
@@ -202,3 +212,36 @@ class ProfileSearchSerializer(serializers.ModelSerializer):
         data = super(ProfileSearchSerializer, self).to_representation(instance)
         data['user_name'] = instance.user.name
         return data
+
+class PostSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Post
+        fields = ['caption', 'user']
+        extra_kwargs = {
+            'user': {'required': True},
+            'caption': {'required': False}
+        }
+    
+    def create(self, validated_data):
+        image_data = self.initial_data.get('photos')
+        video_data = self.initial_data.get('videos')
+        post = Post.objects.create(**validated_data)
+        caption = validated_data.pop('caption', None)
+
+        if image_data is not None and isinstance(image_data, list):
+            images = [Image(post=post, images=photo) for photo in image_data]
+            Image.objects.bulk_create(images)
+        elif image_data is not None and isinstance(image_data, str):
+            Image.objects.create(post=post, images=image_data)
+
+        if video_data is not None and isinstance(video_data, list):
+            videos = [Video(post=post, videos=video) for video in video_data]
+            Video.objects.bulk_create(videos)
+        elif video_data is not None and  isinstance(video_data, str):
+            Video.objects.create(post=post, videos=video_data)
+
+        Tag.objects.extract_hashtags(post, caption)
+        
+        return post
+    

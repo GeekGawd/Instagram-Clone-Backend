@@ -3,9 +3,9 @@ from urllib import request
 from django.db.models.signals import m2m_changed, post_save, post_init, post_delete
 from django.dispatch import receiver
 from rest_framework.response import Response
-
 from core.models import Notification, User
 from socialuser.models import Comment, Post, Profile
+import socialuser
 
 
 @receiver(m2m_changed, sender=Profile)
@@ -55,7 +55,15 @@ def deleteCommentNotification(sender,instance, **kwargs):
                                         user=post.user,noti_type=2)
     notification.delete()
 
-@receiver(m2m_changed, sender=Post)
-def likeNotification(self, **kwargs):
-    pass
-    
+@receiver(m2m_changed, sender=Post.liked_by.through)
+def likeNotification(sender,**kwargs):
+    if kwargs['action'] == "post_add" and not kwargs['reverse']:
+        post = kwargs['instance']
+        to_user = post.user
+        liked_by_users = kwargs['pk_set']
+        like_notification = [Notification(
+            post=post,
+            user=to_user, sender=User.objects.get(id=user),
+            text=f"{User.objects.get(id=user).profile.username} liked your post.", noti_type=3
+        ) for user in liked_by_users]
+        Notification.objects.bulk_create(like_notification)

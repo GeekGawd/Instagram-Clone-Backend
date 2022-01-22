@@ -1,5 +1,8 @@
+from calendar import TUESDAY
+from inspect import ArgSpec
 import profile
 import re
+from tkinter import N
 from django.db.models import fields, UniqueConstraint
 from django.db.models.base import Model
 from django.db.models.fields import BooleanField, TextField
@@ -47,22 +50,11 @@ class Post(Authorable, Creatable, Model):
     caption = TextField(max_length=350, null=True, blank=True)
     liked_by = ManyToManyField(
         "core.User", related_name="like_post", blank=True)
-    # tag = ManyToManyField(Tag, blank=True)
 
     objects = PostManager()
 
     def no_of_likes(self):
-        return len(self.liked_by.all())
-
-
-class Image(Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    images = models.URLField(max_length=200)
-
-
-class Video(Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    videos = models.URLField(max_length=200)
+        return self.liked_by.count()
 
 # class Media(Model):
 #     post = models.ForeignKey(Post, on_delete=models.CASCADE)
@@ -151,7 +143,6 @@ class FollowRequest(Model):
 
 class Story(Creatable, Model):
     user = ForeignKey("core.User", on_delete=models.CASCADE, related_name="userstory")
-    content = models.URLField()
     is_seen = models.BooleanField(default=False)
 
     objects = StoryManager()
@@ -168,3 +159,14 @@ class Tag(models.Model):
 
     def no_of_posts(self):
         return len(self.post.all())
+
+class Image(Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, blank=True, null=True)
+    images = models.URLField(max_length=200)
+
+
+class Video(Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, blank=True, null=True)
+    videos = models.URLField(max_length=200)
