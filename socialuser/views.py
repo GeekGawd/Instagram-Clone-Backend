@@ -1,5 +1,6 @@
 from os import stat
 from turtle import st
+from xmlrpc.client import FastParser
 from core.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -183,22 +184,22 @@ class FollowerCreateView(APIView):
             return Response({"status": "You cannot follow yourself."}, status=status.HTTP_406_NOT_ACCEPTABLE)
         if request_user_profile.followers.filter(id=request.user.id).exists():
             request_user_profile.followers.remove(request.user)
-            return Response({"status": "User Unfollowed"}, status=status.HTTP_208_ALREADY_REPORTED)
+            return Response({"follow": False}, status=status.HTTP_208_ALREADY_REPORTED)
 
         elif not request_user_profile.is_private:
             request_user_profile.followers.add(request.user)
-            return Response({"status": "User followed"}, status=status.HTTP_200_OK)
+            return Response({"follow": True}, status=status.HTTP_200_OK)
 
         else:
             try:
                 follow_request = FollowRequest.objects.get(from_user=request.user,
                                                            to_user=request_user_profile.user)
                 follow_request.delete()
-                return Response({"status": "Follow Request Removed."}, status=status.HTTP_206_PARTIAL_CONTENT)
+                return Response({"follow": False}, status=status.HTTP_206_PARTIAL_CONTENT)
             except:
                 FollowRequest.objects.create(from_user=request.user,
                                              to_user=request_user_profile.user)
-                return Response({"status": "Follow Request Sent to User"}, status=status.HTTP_201_CREATED)
+                return Response({"follow": True}, status=status.HTTP_201_CREATED)
 
 
 class FollowRequestView(APIView):
