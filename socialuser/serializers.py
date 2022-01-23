@@ -197,10 +197,9 @@ class PostViewSerializer(serializers.ModelSerializer):
 
 
 class HomeFeedStorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Profile
-        fields = ['profile_photo', 'active_story', 'user', 'username']
+        fields = ['profile_photo', 'home_active_story', 'user', 'username']
 
 
 class TagSearchSerializer(serializers.ModelSerializer):

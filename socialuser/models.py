@@ -114,16 +114,16 @@ class Profile(Followable, Model):
     def no_of_followers(self):
         return len(self.followers.all())
     
-    # @property
-    # def active_story(self):
-    #     no_of_active_story = len(self.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)))
-    #     no_of_unseen_story = len(self.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1), is_seen = False))
-    #     if no_of_active_story > 0 and no_of_unseen_story>0:
-    #         return 2
-    #     elif no_of_active_story > 0:
-    #         return 1
-    #     else:
-    #         return 0
+    @property
+    def home_active_story(self):
+        no_of_active_story = len(self.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)))
+        no_of_unseen_story = len(self.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1), is_seen = False))
+        if no_of_active_story > 0 and no_of_unseen_story>0:
+            return 2
+        elif no_of_active_story > 0:
+            return 1
+        else:
+            return 0
 
 class Bookmark(Bookmarkable, Model):
     pass
