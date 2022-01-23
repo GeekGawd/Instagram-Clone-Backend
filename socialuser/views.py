@@ -384,7 +384,7 @@ class GetStoryView(generics.GenericAPIView, mixins.ListModelMixin):
         qs.update(is_seen=True)
         return qs
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             user_id = self.request.data['user_id']
             request_user_profile = Profile.objects.get(user=user_id)

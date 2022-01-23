@@ -108,11 +108,15 @@ from chat.api.serializers import MessageSerializer
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.room_group_name = f"chat_{self.room_name}"
-        print(self.room_group_name)
+        # self.room_group_name = f"chat_{self.room_name}"
+        self.scope["url_route"]["kwargs"]
+        str = sorted(self.room_name.split('-'))
+        userid1, userid2 = str[0], str[1]
+        self.room_group_name = "chat_{userid1}_{userid2}"
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name, self.channel_name
+            self.room_group_name,
+            self.channel_name
         )
         print(self.scope["url_route"]["kwargs"])
         self.accept()
