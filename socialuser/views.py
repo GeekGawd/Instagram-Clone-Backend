@@ -310,11 +310,13 @@ class LikeView(APIView):
         elif comment:
             try:
                 comment.liked_by.get(id=request.user.id)
-                comment.liked_by.remove(id=request.user.id)
-                return Response({"status": "Comment UnLiked Successfully."}, status=status.HTTP_202_ACCEPTED)
+                comment.liked_by.remove(request.user)
+                return Response({"Like": False,
+                                "no_of_likes":comment.liked_by.count()}, status=status.HTTP_202_ACCEPTED)
             except:
                 comment.liked_by.add(request.user)
-                return Response({"status": "Comment Liked Successfully."}, status=status.HTTP_201_CREATED)
+                return Response({"Like": True,
+                                "no_of_likes":comment.liked_by.count()}, status=status.HTTP_201_CREATED)
 
 
 class CommentCreateView(generics.GenericAPIView, mixins.ListModelMixin,
