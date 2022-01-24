@@ -1,3 +1,4 @@
+from wsgiref.util import request_uri
 from core.models import User
 from django.utils import timezone
 from django.views.generic.list import ListView
@@ -6,7 +7,7 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
+from socialuser.models import Bookmark, Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
 from socialuser.serializers import BookmarkSerializer, CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
     FollowerViewSerializer, HomeFeedStorySerializer,\
     LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
@@ -414,10 +415,30 @@ class GetStoryView(generics.GenericAPIView, mixins.ListModelMixin):
         except KeyError:
             return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
 
-class BookmarkView(generics.GenericAPIView, mixins.ListModelMixin,
-                mixins.CreateModelMixin, mixins.DestroyModelMixin):
-    permission_classes = [IsAuthenticated]
+class BookmarkView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     serializer_class = BookmarkSerializer
 
-    def post(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    def get_object(self):
+        bookmark, _ = Bookmark.objects.get_or_create(user=self.request.user.id)
+        return bookmark
+
+    def get(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    def post(self, request):
+        user = request.user
+        post_id = request.data.get("post_id")
+        try:
+            post = Post.objects.get(id=post_id)
+            bookmark, _ = Bookmark.objects.get_or_create(user=user)
+        except ObjectDoesNotExist:
+            return Response({"status": "No such Post Exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            bookmark.posts.get(id=post_id)
+            bookmark.posts.remove(post)
+            return Response({"Bookmark": False}, status=status.HTTP_202_ACCEPTED)
+            
+        except ObjectDoesNotExist:
+            bookmark.posts.add(post)
+            return Response({"Bookmark": True}, status=status.HTTP_200_OK)

@@ -299,7 +299,12 @@ class StoryViewSerializer(serializers.ModelSerializer):
         return data
 
 class BookmarkSerializer(serializers.ModelSerializer):
-
+    posts = PostViewSerializer(many=True)
     class Meta:
         model = Bookmark
-        fields = '__all__'
+        fields = ['user', 'posts']
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['username']=instance.user.profile.username
+        return data
