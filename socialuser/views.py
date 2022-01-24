@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from socialuser.models import Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
-from socialuser.serializers import CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
+from socialuser.serializers import BookmarkSerializer, CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
     FollowerViewSerializer, HomeFeedStorySerializer,\
     LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
     ProfileViewSerializer, StorySerializer, TagSearchSerializer, StoryViewSerializer
@@ -300,10 +300,12 @@ class LikeView(APIView):
             try:
                 post.liked_by.get(id=request.user.id)
                 post.liked_by.remove(request.user)
-                return Response({"status": "Post Unliked Successfully."}, status=status.HTTP_202_ACCEPTED)
+                return Response({"Like": False,
+                                "no_of_likes":post.liked_by.count()}, status=status.HTTP_202_ACCEPTED)
             except:
                 post.liked_by.add(request.user)
-                return Response({"status": "Post Liked Successfully."}, status=status.HTTP_201_CREATED)
+                return Response({"Like": True,
+                                "no_of_likes":post.liked_by.count()}, status=status.HTTP_201_CREATED)
 
         elif comment:
             try:
@@ -389,7 +391,6 @@ class ProfileSearchView(generics.GenericAPIView, mixins.ListModelMixin):
 
 class GetStoryView(generics.GenericAPIView, mixins.ListModelMixin):
     permission_classes = [IsAuthenticated]
-    model = Post
     serializer_class = StoryViewSerializer
 
     def get_queryset(self):
@@ -410,3 +411,11 @@ class GetStoryView(generics.GenericAPIView, mixins.ListModelMixin):
                 return Response({"status": "Profile is Private"}, status=status.HTTP_406_NOT_ACCEPTABLE)
         except KeyError:
             return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
+
+class BookmarkView(generics.GenericAPIView, mixins.ListModelMixin,
+                mixins.CreateModelMixin, mixins.DestroyModelMixin):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookmarkSerializer
+
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)

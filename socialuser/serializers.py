@@ -4,7 +4,8 @@ from django.db.models.fields.related import ForeignKey
 from rest_framework import serializers
 from core.models import *
 import socialuser
-from socialuser.models import Comment, FollowRequest, Post, Profile, Story, Image, Tag, Video
+from socialuser.models import Comment, FollowRequest, Post, Profile,\
+                              Story, Image, Tag, Video, Bookmark
 from rest_framework.fields import empty
 
 
@@ -296,3 +297,9 @@ class StoryViewSerializer(serializers.ModelSerializer):
         data['user_name'] = instance.user.profile.username
         data['profile_picture'] = instance.user.profile.profile_photo
         return data
+
+class BookmarkSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Bookmark
+        fields = '__all__'
