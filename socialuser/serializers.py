@@ -219,6 +219,7 @@ class PostViewSerializer(serializers.ModelSerializer):
         post_id = data.pop('id')
         data['post_id'] = post_id
         data['user_name'] = instance.user.name
+        data['profile_picture'] = instance.user.profile.profile_photo
         return data
 
     def get_Like(self, instance):
