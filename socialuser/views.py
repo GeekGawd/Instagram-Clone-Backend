@@ -419,7 +419,7 @@ class BookmarkView(generics.GenericAPIView, mixins.RetrieveModelMixin):
     serializer_class = BookmarkSerializer
 
     def get_object(self):
-        bookmark, _ = Bookmark.objects.get_or_create(user=self.request.user.id)
+        bookmark, _ = Bookmark.objects.get_or_create(user=self.request.user)
         return bookmark
 
     def get(self, request, *args, **kwargs):

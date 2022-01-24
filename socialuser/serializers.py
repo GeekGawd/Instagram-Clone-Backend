@@ -7,6 +7,7 @@ import socialuser
 from socialuser.models import Comment, FollowRequest, Post, Profile,\
                               Story, Image, Tag, Video, Bookmark
 from rest_framework.fields import empty
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # class ImageSerializer(serializers.ModelSerializer):
@@ -204,13 +205,14 @@ class CommentSerializer(serializers.ModelSerializer):
 class PostViewSerializer(serializers.ModelSerializer):
     # comments = CommentSerializer(many=True, source='comment_set')
     # media = MediaSerializer(many=True, source='media_set')
+    Like = serializers.SerializerMethodField()
     post_image = ImageViewSerializer(many=True, source='image_set')
     post_video = VideoViewSerializer(many=True, source='video_set')
 
     class Meta:
         model = Post
         fields = ['post_image', 'post_video',
-                  'caption', 'user', 'no_of_likes', 'id']
+                  'caption', 'user', 'no_of_likes', 'id', 'Like']
 
     def to_representation(self, instance):
         data = super(PostViewSerializer, self).to_representation(instance)
@@ -219,6 +221,14 @@ class PostViewSerializer(serializers.ModelSerializer):
         data['user_name'] = instance.user.name
         return data
 
+    def get_Like(self, instance):
+        request = self.context.get("request")
+        user = request.user
+        try:
+            instance.liked_by.get(id=user.id)
+            return True
+        except ObjectDoesNotExist:
+            return False
 
 class HomeFeedStorySerializer(serializers.ModelSerializer):
     class Meta:
