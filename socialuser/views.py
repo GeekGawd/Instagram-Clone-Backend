@@ -1,6 +1,4 @@
 from core.models import User
-from django.core.exceptions import ValidationError
-from django.db import models
 from django.utils import timezone
 from django.views.generic.list import ListView
 from rest_framework import generics, mixins
@@ -174,29 +172,40 @@ class FollowerCreateView(APIView):
     def put(self, request):
         session_user_profile = Profile.objects.get(user=request.user)
         user_id = request.data.get("user_id")
-        print(User.objects.get(id=user_id))
         request_user_profile = Profile.objects.get(user=User.objects.get(id=user_id))
 
         if user_id == request.user.id:
             return Response({"status": "You cannot follow yourself."}, status=status.HTTP_406_NOT_ACCEPTABLE)
         if request_user_profile.followers.filter(id=request.user.id).exists():
             request_user_profile.followers.remove(request.user)
-            return Response({"follow": False}, status=status.HTTP_208_ALREADY_REPORTED)
+            data = {"follow": False, 
+                    "no_of_following": request_user_profile.user.followers.count(),
+                    "no_of_followers": request_user_profile.followers.count()}
+            return Response(data, status=status.HTTP_208_ALREADY_REPORTED)
 
         elif not request_user_profile.is_private:
             request_user_profile.followers.add(request.user)
-            return Response({"follow": True}, status=status.HTTP_200_OK)
+            data = {"follow": True, 
+                    "no_of_following": request_user_profile.user.followers.count(),
+                    "no_of_followers": request_user_profile.followers.count()}
+            return Response(data, status=status.HTTP_200_OK)
 
         else:
             try:
                 follow_request = FollowRequest.objects.get(from_user=request.user,
                                                            to_user=request_user_profile.user)
                 follow_request.delete()
-                return Response({"follow": False}, status=status.HTTP_206_PARTIAL_CONTENT)
+                data = {"follow": False, 
+                        "no_of_following": request_user_profile.user.followers.count(),
+                        "no_of_followers": request_user_profile.followers.count()}
+                return Response(data, status=status.HTTP_206_PARTIAL_CONTENT)
             except:
                 FollowRequest.objects.create(from_user=request.user,
                                              to_user=request_user_profile.user)
-                return Response({"follow": True}, status=status.HTTP_201_CREATED)
+                data = {"follow": True, 
+                        "no_of_following": request_user_profile.user.followers.count(),
+                        "no_of_followers": request_user_profile.followers.count()}
+                return Response(data, status=status.HTTP_201_CREATED)
 
 
 class FollowRequestView(APIView):
@@ -262,8 +271,13 @@ class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin):
 
     def get_queryset(self):
         qs = Profile.objects.get(user=self.request.user.id).user.followers.all()
-        stories = [profile for profile in qs if len(profile.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1))) > 0]
-        return stories
+        stories = [profile for profile in qs if profile.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists()]
+
+        if self.request.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists():
+            stories = [self.request.user.profile] + stories
+            return stories
+        else:
+            return stories
 
     def get(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -311,18 +325,19 @@ class CommentCreateView(generics.GenericAPIView, mixins.ListModelMixin,
         return Comment.objects.get(id=comment_id)
     
     def get_queryset(self):
-        post_id = self.request.data.get("post_id")
-        comments = Post.objects.get(id=post_id).prefetch_related("comment")
+        post_id = self.request.data.get("post")
+        comments = Post.objects.get(id=post_id).postcomments.filter(parent=None)
         return comments
     
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
-            request.data['post_id']
-        except KeyError:
-            return Response({"status": "Enter a post id to view comments"}, status=status.HTTP_400_BAD_REQUEST)
+            post_id=request.data['post']
+            Post.objects.get(id=post_id)
+        except (KeyError,ObjectDoesNotExist) as error:
+            return Response({"status": "Enter a valid post id to view comments."}, status=status.HTTP_400_BAD_REQUEST)
         return super().list(request, *args, **kwargs)
     
-    def post(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         request.data.update({"comment_by": request.user.id})
         return super().create(request, *args, **kwargs)
     

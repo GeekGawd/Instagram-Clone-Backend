@@ -12,26 +12,27 @@ from django.conf import settings
 @database_sync_to_async
 def authenticate(request):
     # auth_data = authentication.get_authorization_header(request)
-    auth_data = request["headers"][4][1]
+    auth_data = dict(request["headers"])
+    try:
+        auth_data[b'authorization']
+    except KeyError:
+        raise ValueError("Enter a Bearer Token.")
     
-    if not auth_data:
-        return None
-    
-    prefix, token = auth_data.decode('utf-8').split(' ')
+    prefix, token = auth_data[b'authorization'].decode('utf-8').split(' ')
 
     try:
         payload = jwt.decode(jwt=token, key=settings.SECRET_KEY, algorithms=['HS256'])
         try:
             user = User.objects.get(id=payload["user_id"])
         except:
-            raise AuthenticationFailed('Invalid Token')
+            raise ValueError('Invalid Token')
         return user
         
     except jwt.ExpiredSignatureError as e:
-        raise ValidationError({"error": ["Token has Expired"]})
+        raise ValueError({"error": ["Token has Expired"]})
 
     except jwt.exceptions.DecodeError as e:
-        raise AuthenticationFailed('Invalid Token')
+        raise ValueError('Invalid Token')
 
 class JWTAuthMiddleware(BaseMiddleware):
     """

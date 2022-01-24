@@ -6,8 +6,8 @@ from core.models import User
 User = get_user_model()
 
 class Conversation(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="convo_starter")
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="convo_participant")
+    participant1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="convo_starter")
+    participant2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="convo_participant")
     start_time = models.DateTimeField(auto_now_add=True)
 
 

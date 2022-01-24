@@ -165,10 +165,33 @@ class LikeSerializer(serializers.Serializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    reply_count = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['comment', 'comment_by', 'post']
+        fields = ('content','replies', 'parent','post','author', 'reply_count', 'comment_by', 'is_parent')
+
+    def get_replies(self, obj):
+        queryset = Comment.objects.filter(parent_id=obj.id)
+        serializer = CommentSerializer(queryset, many=True)
+        return serializer.data
+
+    def get_reply_count(self, obj):
+        if obj.is_parent:
+            return obj.children().count()
+        return 0
+
+    def get_author(self, obj):
+        return obj.comment_by.profile.username
+    
+    def to_representation(self, instance):
+        data = super(CommentSerializer, self).to_representation(instance)
+        if instance.parent is None:
+            data.pop('replies')
+            data.pop('reply_count')
+        return data
 
 # class MediaSerializer(serializers.ModelSerializer):
 

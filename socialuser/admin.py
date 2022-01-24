@@ -21,12 +21,6 @@ class PostAdmin(admin.ModelAdmin):
     class Meta:
         model = Post
 
-class StoryAdmin(admin.ModelAdmin):
-    inlines = [ImagesAdmin, VideosAdmin]
-
-    class Meta:
-        model = Story
-
 
 class ImagesAdmin(admin.ModelAdmin):
     pass
@@ -40,5 +34,5 @@ admin.site.register(Comment)
 admin.site.register(Profile)
 admin.site.register(Bookmark)
 admin.site.register(FollowRequest)
-admin.site.register(Story, StoryAdmin)
+admin.site.register(Story)
 admin.site.register(Tag) 

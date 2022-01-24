@@ -38,17 +38,18 @@ def remove_follower(sender, instance, **kwargs):
 
 @receiver(post_init, sender=Comment)
 def commentNotification(sender,instance, **kwargs):
-    comment = instance.comment
+    comment = instance.content
     comment_by_profile = Profile.objects.get(user=instance.comment_by)
     post = instance.post
-    if post.user != comment_by_profile.user:
-        Notification.objects.create(post=post,sender=comment_by_profile.user,
-                                    text=f"{comment_by_profile.username} has commented on your post: {comment[:100]}",
-                                    user=post.user, noti_type=2)
+    if post:
+        if post.user != comment_by_profile.user:
+            Notification.objects.create(post=post,sender=comment_by_profile.user,
+                                        text=f"{comment_by_profile.username} has commented on your post: {comment[:100]}",
+                                        user=post.user, noti_type=2)
 
 @receiver(post_delete, sender=Comment)
 def deleteCommentNotification(sender,instance, **kwargs):
-    comment = instance.comment
+    comment = instance.content
     comment_by = instance.comment_by
     post = instance.post
     notification = Notification.objects.filter(post=post,sender=comment_by.id,

@@ -93,10 +93,11 @@
 #         }))
 
 import base64
+from distutils.log import debug
 import json
 import secrets
 from datetime import datetime
-
+from django.db.models import Q
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 from django.core.files.base import ContentFile
@@ -109,16 +110,14 @@ class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         # self.room_group_name = f"chat_{self.room_name}"
-        self.scope["url_route"]["kwargs"]
         str = sorted(self.room_name.split('-'))
         userid1, userid2 = str[0], str[1]
-        self.room_group_name = "chat_{userid1}_{userid2}"
+        self.room_group_name = f"chat-{userid1}-{userid2}"
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name,
             self.channel_name
         )
-        print(self.scope["url_route"]["kwargs"])
         self.accept()
 
     def disconnect(self, close_code):
@@ -137,11 +136,12 @@ class ChatConsumer(WebsocketConsumer):
             text_data_json["message"],
             text_data_json.get("attachment"),
         )
-        print((self.room_name))
+        str = sorted(self.room_name.split('-'))
+        userid1, userid2 = int(str[0]), int(str[1])
         sender = self.scope["user"]
         print(sender)
-        conversation = Conversation.objects.get(id=int(self.room_name))
-        print(sender)
+        conversation = Conversation.objects.filter(Q(participant1=userid1, participant2=userid2) | Q(
+            participant1=userid2, participant2=userid1)).last()
 
         # Attachment
         if attachment:
@@ -150,31 +150,31 @@ class ChatConsumer(WebsocketConsumer):
             file_data = ContentFile(
                 base64.b64decode(file_str), name=f"{secrets.token_hex(8)}.{file_ext}"
             )
-            _message = Message.objects.create(
+            created_message = Message.objects.create(
                 sender=sender,
                 attachment=file_data,
                 text=message,
                 conversation_id=conversation,
             )
         else:
-            _message = Message.objects.create(
+            created_message = Message.objects.create(
                 sender=sender,
                 text=message,
                 conversation_id=conversation,
             )
         # Send message to room group
         chat_type = {"type": "chat_message"}
-        message_serializer = (dict(MessageSerializer(instance=_message).data))
+        message_serializer = (dict(MessageSerializer(instance=created_message).data))
         return_dict = {**chat_type, **message_serializer}
-        if _message.attachment:
+        if created_message.attachment:
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     "type": "chat_message",
                     "message": message,
                     "sender": sender.email,
-                    "attachment": _message.attachment.url,
-                    "time": str(_message.timestamp),
+                    "attachment": created_message.attachment.url,
+                    "time": str(created_message.timestamp),
                 },
             )
         else:

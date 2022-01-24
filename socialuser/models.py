@@ -57,15 +57,28 @@ class Post(Authorable, Creatable, Model):
     # media = models.URLField(max_length=200)
 
 
-class Comment(Model):
+class Comment(Creatable, Model):
     liked_by = ManyToManyField(
         "core.User", related_name="like_comment", blank=True)
-    comment = TextField(max_length=250)
+    content = TextField(max_length=250)
     comment_by = ForeignKey("core.User", on_delete=models.CASCADE)
-    post = ForeignKey(Post, on_delete=models.CASCADE)
+    post = ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True, related_name="postcomments")
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ('-created_at',)
 
     def __str__(self):
-        return f"{self.comment_by.name} -> {self.comment[:35]}"
+        return f"{self.comment_by.name} -> {self.content[:35]}"
+    
+    def children(self):
+        return Comment.objects.filter(parent=self)
+
+    @property
+    def is_parent(self):
+        if self.parent is not None:
+            return False
+        return True
 
 
 # class Like(Model):
@@ -109,10 +122,10 @@ class Profile(Followable, Model):
     objects = FollowManager()
 
     def no_of_following(self):
-        return len(self.user.followers.all())
+        return self.user.followers.count()
 
     def no_of_followers(self):
-        return len(self.followers.all())
+        return self.followers.count()
     
     @property
     def home_active_story(self):

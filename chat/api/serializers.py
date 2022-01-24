@@ -17,13 +17,13 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ConversationListSerializer(serializers.ModelSerializer):
-    sender = MessageUserSerializer()
-    receiver = MessageUserSerializer()
+    participant1 = MessageUserSerializer()
+    participant2 = MessageUserSerializer()
     last_message = serializers.SerializerMethodField()
 
     class Meta:
         model = Conversation
-        fields = ['sender', 'receiver', 'last_message']
+        fields = ['participant1', 'participant2', 'last_message']
 
     def get_last_message(self, instance):
         message = instance.message_set.first()
@@ -34,10 +34,10 @@ class ConversationListSerializer(serializers.ModelSerializer):
 
 
 class ConversationSerializer(serializers.ModelSerializer):
-    sender = MessageUserSerializer()
-    receiver = MessageUserSerializer()
+    participant1 = MessageUserSerializer()
+    participant2 = MessageUserSerializer()
     message_set = MessageSerializer(many=True)
 
     class Meta:
         model = Conversation
-        fields = ['sender', 'receiver', 'message_set']
+        fields = ['participant1', 'participant2', 'message_set']
