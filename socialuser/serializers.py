@@ -1,4 +1,3 @@
-from cmath import isnan
 import profile
 from django.db.models import fields
 from django.db.models.fields.related import ForeignKey
@@ -214,11 +213,13 @@ class PostViewSerializer(serializers.ModelSerializer):
     Like = serializers.SerializerMethodField()
     post_image = ImageViewSerializer(many=True, source='image_set')
     post_video = VideoViewSerializer(many=True, source='video_set')
+    bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = ['post_image', 'post_video',
-                  'caption', 'user', 'no_of_likes', 'id', 'Like']
+                  'caption', 'user', 'no_of_likes',
+                   'id', 'Like', 'bookmarked']
 
     def to_representation(self, instance):
         data = super(PostViewSerializer, self).to_representation(instance)
@@ -233,6 +234,15 @@ class PostViewSerializer(serializers.ModelSerializer):
         user = request.user
         try:
             instance.liked_by.get(id=user.id)
+            return True
+        except ObjectDoesNotExist:
+            return False
+    
+    def get_bookmarked(self, instance):
+        request = self.context.get("request")
+        user = request.user
+        try:
+            user.bookmark.posts.get(id=instance.id)
             return True
         except ObjectDoesNotExist:
             return False
@@ -325,3 +335,23 @@ class BookmarkSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data['username']=instance.user.profile.username
         return data
+
+class NotificationSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+    sender_username = serializers.SerializerMethodField()
+    post_preview_image = serializers.SerializerMethodField()
+    class Meta:
+        model = Notification
+        fields = ['text', 'is_seen', 'post', 'sender_username',
+                 'profile_picture', 'post_preview_image']
+    
+    def get_profile_picture(self, instance):
+        return instance.sender.profile.profile_photo
+    
+    def get_sender_username(self, instance):
+        return instance.sender.profile.username
+
+    def get_post_preview_image(self, instance):
+        images = instance.post.image_set
+        serialized_images = ImageViewSerializer(images, many=True)
+        return serialized_images.data[0].get('images')

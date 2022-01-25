@@ -1,19 +1,19 @@
-from wsgiref.util import request_uri
-from core.models import User
+from django.template import context
+from core.models import User, Notification
 from django.utils import timezone
 from django.views.generic.list import ListView
-from rest_framework import generics, mixins
-from rest_framework import serializers, status
+from rest_framework import generics, mixins, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from socialuser.models import Bookmark, Comment, Profile, Post, FollowRequest, Story, Image, Video, Tag
 from socialuser.serializers import BookmarkSerializer, CommentSerializer, FollowRequestSerializer, FollowRequestSerializer,\
     FollowerViewSerializer, HomeFeedStorySerializer,\
-    LikePostSerializer, LikeSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
+    LikePostSerializer, LikeSerializer, NotificationSerializer, PostSerializer, PostViewSerializer, ProfileSearchSerializer,\
     ProfileViewSerializer, StorySerializer, TagSearchSerializer, StoryViewSerializer
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.pagination import PageNumberPagination
 
 
 # Create your views here.
@@ -273,12 +273,8 @@ class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin):
     def get_queryset(self):
         qs = Profile.objects.get(user=self.request.user.id).user.followers.all()
         stories = [profile for profile in qs if profile.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists()]
-
-        if self.request.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists():
-            stories = [self.request.user.profile] + stories
-            return stories
-        else:
-            return stories
+        stories = [self.request.user.profile] + stories
+        return stories
 
     def get(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -442,3 +438,32 @@ class BookmarkView(generics.GenericAPIView, mixins.RetrieveModelMixin):
         except ObjectDoesNotExist:
             bookmark.posts.add(post)
             return Response({"Bookmark": True}, status=status.HTTP_200_OK)
+
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 10
+
+class NotificationView(generics.GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificationSerializer
+    pagination_class = LargeResultsSetPagination
+    
+    def get_queryset(self):
+        qs = Notification.objects.filter(user=self.request.user)
+        qs.update(is_seen=True)
+        return qs
+    
+    def get_object(self):
+        post_id = self.request.data.get("post_id")
+        return Post.objects.get(id=post_id)
+    
+    def get(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        context = {"request": request}
+        serializer = PostViewSerializer(instance, context=context)
+        return Response(serializer.data)
+    
+    def post(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
