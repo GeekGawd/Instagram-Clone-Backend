@@ -273,8 +273,12 @@ class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin):
     def get_queryset(self):
         qs = Profile.objects.get(user=self.request.user.id).user.followers.all()
         stories = [profile for profile in qs if profile.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists()]
-        stories = [self.request.user.profile] + stories
-        return stories
+        
+        if self.request.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists():
+            stories = [self.request.user.profile] + stories
+            return stories
+        else:
+            return stories
 
     def get(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -411,15 +415,15 @@ class GetStoryView(generics.GenericAPIView, mixins.ListModelMixin):
         except KeyError:
             return Response({"Enter a user id to view story."}, status=status.HTTP_400_BAD_REQUEST)
 
-class BookmarkView(generics.GenericAPIView, mixins.RetrieveModelMixin):
-    serializer_class = BookmarkSerializer
+class BookmarkView(generics.GenericAPIView, mixins.ListModelMixin):
+    serializer_class = PostViewSerializer
 
-    def get_object(self):
+    def get_queryset(self):
         bookmark, _ = Bookmark.objects.get_or_create(user=self.request.user)
-        return bookmark
+        return bookmark.posts.all()
 
     def get(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     def post(self, request):
         user = request.user
@@ -439,13 +443,13 @@ class BookmarkView(generics.GenericAPIView, mixins.RetrieveModelMixin):
             bookmark.posts.add(post)
             return Response({"Bookmark": True}, status=status.HTTP_200_OK)
 
-class LargeResultsSetPagination(PageNumberPagination):
-    page_size = 10
+# class LargeResultsSetPagination(PageNumberPagination):
+#     page_size = 10
 
 class NotificationView(generics.GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin):
     permission_classes = [IsAuthenticated]
     serializer_class = NotificationSerializer
-    pagination_class = LargeResultsSetPagination
+    # pagination_class = LargeResultsSetPagination
     
     def get_queryset(self):
         qs = Notification.objects.filter(user=self.request.user)
