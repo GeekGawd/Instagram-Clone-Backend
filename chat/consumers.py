@@ -188,7 +188,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Send message to room group
         chat_type = {"type": "chat_message"}
         message_serializer = await self.message_to_dict(created_message)
-        return_dict = {**chat_type, **message_serializer}
+        return_dict = {**chat_type, **message_serializer, "bruh": "Joke Message"}
 
         if created_message.attachment is not None:
             await self.channel_layer.group_send(
@@ -207,6 +207,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return_dict,
             )
 
+    async def websocket_receive(self, message):
+        print(message)
+        return await super().websocket_receive(message)
     # Receive message from room group
     async def chat_message(self, event):
         dict_to_be_sent = event.copy()

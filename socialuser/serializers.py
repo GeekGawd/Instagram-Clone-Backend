@@ -1,4 +1,5 @@
 from cmath import isnan
+import profile
 from django.db.models import fields
 from django.db.models.fields.related import ForeignKey
 from rest_framework import serializers
@@ -170,10 +171,15 @@ class CommentSerializer(serializers.ModelSerializer):
     reply_count = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
+    profile_picture = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ('id','content','replies', 'parent','post','author', 'reply_count', 'comment_by', 'is_parent')
+        fields = ('id','content','replies', 'parent','post','author',
+                 'reply_count', 'comment_by', 'is_parent', 'profile_picture')
+
+    def get_profile_picture(self, obj):
+        return obj.comment_by.profile.profile_photo
 
     def get_replies(self, obj):
         queryset = Comment.objects.filter(parent_id=obj.id)
