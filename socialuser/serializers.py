@@ -342,7 +342,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     post_preview_image = serializers.SerializerMethodField()
     class Meta:
         model = Notification
-        fields = ['text', 'is_seen', 'post', 'sender_username',
+        fields = ['text', 'is_seen', 'post',
                  'profile_picture', 'post_preview_image']
     
     def get_profile_picture(self, instance):
