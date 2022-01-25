@@ -338,14 +338,18 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
 class NotificationSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
+    sender_username = serializers.SerializerMethodField()
     post_preview_image = serializers.SerializerMethodField()
     class Meta:
         model = Notification
-        fields = ['text', 'is_seen', 'post',
+        fields = ['text', 'is_seen', 'post', 'sender_username',
                  'profile_picture', 'post_preview_image']
     
     def get_profile_picture(self, instance):
         return instance.sender.profile.profile_photo
+    
+    def get_sender_username(self, instance):
+        return instance.sender.profile.username
 
     def get_post_preview_image(self, instance):
         images = instance.post.image_set
