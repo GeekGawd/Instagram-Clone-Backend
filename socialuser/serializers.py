@@ -173,7 +173,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('content','replies', 'parent','post','author', 'reply_count', 'comment_by', 'is_parent')
+        fields = ('id','content','replies', 'parent','post','author', 'reply_count', 'comment_by', 'is_parent')
 
     def get_replies(self, obj):
         queryset = Comment.objects.filter(parent_id=obj.id)
@@ -190,7 +190,7 @@ class CommentSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         data = super(CommentSerializer, self).to_representation(instance)
-        if instance.parent is None:
+        if instance.parent is not None:
             data.pop('replies')
             data.pop('reply_count')
         return data

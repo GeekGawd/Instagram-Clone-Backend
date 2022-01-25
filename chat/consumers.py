@@ -92,45 +92,86 @@
 #             'message': message
 #         }))
 
-import base64
-from distutils.log import debug
 import json
-import secrets
-from datetime import datetime
+from pyexpat.errors import messages
 from django.db.models import Q
-from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
-from django.core.files.base import ContentFile
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from core.models import User
 from .models import Message, Conversation
 from chat.api.serializers import MessageSerializer
+from channels.exceptions import DenyConnection
 
 
-class ChatConsumer(WebsocketConsumer):
-    def connect(self):
+
+class ChatConsumer(AsyncWebsocketConsumer):
+
+    @database_sync_to_async
+    def fetch_messages(self, userid1, userid2):
+        conversation = Conversation.objects.filter(Q(participant1=userid1, participant2=userid2) | Q(
+            participant1=userid2, participant2=userid1)).last()
+        messages = conversation.messages.all()
+        messages.update(is_seen=True)
+        serialized_messages = MessageSerializer(instance=messages, many=True).data
+        message_dict = {"messages": []}
+        for msg in serialized_messages:
+            message_dict["messages"].append(dict(msg))
+        return message_dict
+    
+    @database_sync_to_async
+    def get_conversation(self, userid1, userid2):
+        return Conversation.objects.filter(Q(participant1=userid1, participant2=userid2) | Q(
+            participant1=userid2, participant2=userid1)).last()
+    
+    @database_sync_to_async
+    def message_create_function(self,sender, attachment, message, conversation):
+        if attachment:
+            created_message = Message.objects.create(
+                sender=sender,
+                attachment=attachment,
+                text=message,
+                conversation_id=conversation,
+            )
+        else:
+            created_message = Message.objects.create(
+                sender=sender,
+                text=message,
+                conversation_id=conversation,
+            )
+        
+        return created_message
+
+    @database_sync_to_async
+    def message_to_dict(self, created_message):
+        return (dict(MessageSerializer(instance=created_message).data))
+
+    async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         # self.room_group_name = f"chat_{self.room_name}"
         str = sorted(self.room_name.split('-'))
         userid1, userid2 = str[0], str[1]
         self.room_group_name = f"chat-{userid1}-{userid2}"
+        data = await self.fetch_messages(userid1,userid2)
         # Join room group
-        async_to_sync(self.channel_layer.group_add)(
+        await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-        self.accept()
+        if not(self.scope['user'].id is int(userid1) or self.scope['user'].id is int(userid2)):
+            raise DenyConnection()
+        await self.accept()
+        await self.send(text_data=json.dumps(data))
 
-    def disconnect(self, close_code):
+    async def disconnect(self, close_code):
         # Leave room group
-        async_to_sync(self.channel_layer.group_discard)(
+        await self.channel_layer.group_discard(
             self.room_group_name, self.channel_name
         )
 
     # Receive message from WebSocket
-    def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, text_data=None, bytes_data=None):
         # parse the json data into dictionary object
         text_data_json = json.loads(text_data)
-        print(text_data_json)
         # unpack the dictionary into the necessary parts
         message, attachment = (
             text_data_json["message"],
@@ -139,57 +180,41 @@ class ChatConsumer(WebsocketConsumer):
         str = sorted(self.room_name.split('-'))
         userid1, userid2 = int(str[0]), int(str[1])
         sender = self.scope["user"]
-        print(sender)
-        conversation = Conversation.objects.filter(Q(participant1=userid1, participant2=userid2) | Q(
-            participant1=userid2, participant2=userid1)).last()
+        conversation = await self.get_conversation(userid1, userid2)
 
         # Attachment
-        if attachment:
-            file_str, file_ext = attachment["data"], attachment["format"]
+        created_message = await self.message_create_function(sender,attachment,message, conversation)
 
-            file_data = ContentFile(
-                base64.b64decode(file_str), name=f"{secrets.token_hex(8)}.{file_ext}"
-            )
-            created_message = Message.objects.create(
-                sender=sender,
-                attachment=file_data,
-                text=message,
-                conversation_id=conversation,
-            )
-        else:
-            created_message = Message.objects.create(
-                sender=sender,
-                text=message,
-                conversation_id=conversation,
-            )
         # Send message to room group
         chat_type = {"type": "chat_message"}
-        message_serializer = (dict(MessageSerializer(instance=created_message).data))
+        message_serializer = await self.message_to_dict(created_message)
         return_dict = {**chat_type, **message_serializer}
-        if created_message.attachment:
-            async_to_sync(self.channel_layer.group_send)(
+
+        if created_message.attachment is not None:
+            await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "chat_message",
                     "message": message,
                     "sender": sender.email,
-                    "attachment": created_message.attachment.url,
+                    "attachment": created_message.attachment,
                     "time": str(created_message.timestamp),
                 },
             )
         else:
-            async_to_sync(self.channel_layer.group_send)(
+           await self.channel_layer.group_send(
                 self.room_group_name,
                 return_dict,
             )
 
     # Receive message from room group
-    def chat_message(self, event):
+    async def chat_message(self, event):
         dict_to_be_sent = event.copy()
         dict_to_be_sent.pop("type")
+        print(dict_to_be_sent)
 
         # Send message to WebSocket
-        self.send(
+        await self.send(
                 text_data=json.dumps(
                     dict_to_be_sent
                 )

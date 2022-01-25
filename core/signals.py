@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from rest_framework.response import Response
 from core.models import Notification, User
 from socialuser.models import Comment, Post, Profile
-import socialuser
+from chat.models import Message
 
 
 @receiver(m2m_changed, sender=Profile)
@@ -68,3 +68,12 @@ def likeNotification(sender,**kwargs):
             text=f"{User.objects.get(id=user).profile.username} liked your post.", noti_type=3
         ) for user in liked_by_users]
         Notification.objects.bulk_create(like_notification)
+
+@receiver(m2m_changed, sender=Post.liked_by.through)
+def removelikeNotification(sender,instance, **kwargs):
+    if kwargs['action'] == "post_remove" and not kwargs['reverse']:
+        liked_by_users = kwargs['pk_set']
+        for user_id in liked_by_users:
+            notify = Notification.objects.filter(
+                sender=User.objects.get(id=user_id), user=instance.user, noti_type=3)
+            notify.delete()

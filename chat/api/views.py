@@ -1,12 +1,11 @@
-from wsgiref.util import request_uri
-from django.db.models import query
+from channels.db import database_sync_to_async
 from rest_framework import serializers, status
 from rest_framework.views import APIView
 from django.db.models import Q
 from chat.models import Conversation, Message
 from core.models import User
 from socialuser.models import Post, Profile
-from .serializers import ConversationSerializer, ConversationListSerializer
+from .serializers import ConversationSerializer, ConversationListSerializer, MessageSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.urls import reverse
