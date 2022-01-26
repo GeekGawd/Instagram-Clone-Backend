@@ -12,6 +12,9 @@ class Conversation(models.Model):
     participant2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="convo_participant")
     start_time = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self) -> str:
+        return f"{self.participant1}->{self.participant2}"
+
 
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_sender', blank=True, null=True)
@@ -23,3 +26,6 @@ class Message(models.Model):
 
     class Meta:
         ordering = ('-timestamp',)
+    
+    def __str__(self) -> str:
+        return f"{self.sender}->{self.conversation_id}->{self.text}"

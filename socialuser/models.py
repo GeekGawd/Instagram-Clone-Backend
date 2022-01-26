@@ -49,6 +49,9 @@ class Post(Authorable, Creatable, Model):
 
     objects = PostManager()
 
+    def __str__(self) -> str:
+        return f"{self.user.email} posted {self.caption}"
+
     def no_of_likes(self):
         return self.liked_by.count()
 
@@ -69,7 +72,9 @@ class Comment(Creatable, Model):
         ordering = ('-created_at',)
 
     def __str__(self):
-        return f"{self.comment_by.name} -> {self.content[:35]}"
+        if self.parent is None:
+            return f"{self.comment_by.name} -> {self.content[:35]}"
+        return f"{self.parent.content[:35]} -> {self.comment_by.name} -> {self.content[:35]}"
     
     def children(self):
         return Comment.objects.filter(parent=self)
@@ -121,6 +126,9 @@ class Profile(Followable, Model):
 
     objects = FollowManager()
 
+    def __str__(self) -> str:
+        return f"{self.user.email} Profile -> {self.username}"
+
     def no_of_following(self):
         return self.user.followers.count()
 
@@ -141,12 +149,18 @@ class Profile(Followable, Model):
 class Bookmark(Bookmarkable, Model):
     pass
 
+    def __str__(self) -> str:
+        return f"{self.user.email}'s Bookmark"
+
 
 class FollowRequest(Model):
     from_user = models.ForeignKey(
         "core.User", on_delete=models.CASCADE, related_name="from_user")
     to_user = models.ForeignKey(
         "core.User", on_delete=models.CASCADE, related_name="to_user")
+    
+    def __str__(self) -> str:
+        return f"Follow Request from {self.from_user.email}->{self.to_user.email}"
 
 
 class Story(Creatable, Model):
@@ -154,6 +168,9 @@ class Story(Creatable, Model):
     is_seen = models.BooleanField(default=False)
 
     objects = StoryManager()
+
+    def __str__(self) -> str:
+        return f"Story posted by {self.user.email}"
 
 
 class Tag(models.Model):
@@ -173,8 +190,18 @@ class Image(Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE, blank=True, null=True)
     images = models.URLField(max_length=200)
 
+    def __str__(self) -> str:
+        if self.post is not None:
+            return f"Post ID {self.post.id} ->{self.images}"
+        return f"Story ID {self.story.id} ->{self.images}"
+
 
 class Video(Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
     story = models.ForeignKey(Story, on_delete=models.CASCADE, blank=True, null=True)
     videos = models.URLField(max_length=200)
+
+    def __str__(self) -> str:
+        if self.post is not None:
+            return f"Post ID {self.post.id} ->{self.videos}"
+        return f"Story ID {self.story.id} ->{self.videos}"
