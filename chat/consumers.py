@@ -93,6 +93,7 @@
 #         }))
 
 import json
+import profile
 from pyexpat.errors import messages
 from django.db.models import Q
 from channels.db import database_sync_to_async
@@ -151,14 +152,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         str = sorted(self.room_name.split('-'))
         userid1, userid2 = str[0], str[1]
         self.room_group_name = f"chat-{userid1}-{userid2}"
+        conversation = await self.get_conversation(userid1, userid2)
+        if conversation is None or not(self.scope['user'].id is int(userid1) or self.scope['user'].id is int(userid2)):
+            raise DenyConnection()
         data = await self.fetch_messages(userid1,userid2)
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-        if not(self.scope['user'].id is int(userid1) or self.scope['user'].id is int(userid2)):
-            raise DenyConnection()
         await self.accept()
         await self.send(text_data=json.dumps(data))
 
