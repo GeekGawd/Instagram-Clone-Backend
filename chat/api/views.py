@@ -1,4 +1,5 @@
-from channels.db import database_sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
+from django.template import context
 from rest_framework import serializers, status
 from rest_framework.views import APIView
 from django.db.models import Q
@@ -55,10 +56,7 @@ class ConversationCreateView(APIView):
 
 @api_view(['GET'])
 def get_conversation(request, convo_id):
-    str = sorted(convo_id.split('-'))
-    userid1, userid2 = str[0], str[1]
-    conversation = Conversation.objects.filter(Q(participant1=userid1, participant2=userid2) | Q(
-            participant1=userid2, participant2=userid1))
+    conversation = Conversation.objects.filter(id=convo_id)
     if not conversation.exists():
         return Response({'message': 'Conversation does not exist'})
     else:
@@ -69,9 +67,10 @@ def get_conversation(request, convo_id):
 class ConversationView(APIView):
     serializer_class = ConversationListSerializer
 
-    def conversations(self, request):
+    def get(self, request):
         conversation_list = Conversation.objects.filter(
-            Q(sender=request.user) | Q(receiver=request.user))
+            Q(participant1=request.user) | Q(participant2=request.user))
+        context = {"request": request}
         serializer = self.serializer_class(
-            instance=conversation_list, many=True)
+            instance=conversation_list, many=True, context=context)
         return Response(serializer.data)

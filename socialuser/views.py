@@ -61,12 +61,11 @@ class HomePostView(generics.GenericAPIView, mixins.ListModelMixin):
     def get_queryset(self):
         posts = []
         # print(dir(Post.objects.select_related("user")))
-        print(Profile.objects.get(user=self.request.user).user.followers.all())
-        print(self.request.user)
-        for follower in Profile.objects.get_following(self.request):
-            for post in Post.objects.filter(user=follower.user):
-                posts.append(post)
-        return posts
+        following = Profile.objects.get_following(self.request)
+        qs = Post.objects.filter(user=following[0].user)
+        for follower in following[1:]:
+            qs = qs.union(Post.objects.filter(user=follower.user)).order_by('-created_at')
+        return qs
 
     def get(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -272,7 +271,7 @@ class HomeStoryView(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = HomeFeedStorySerializer
 
     def get_queryset(self):
-        qs = Profile.objects.get(user=self.request.user.id).user.followers.all()
+        qs = Profile.objects.get_following(self.request)
         stories = [profile for profile in qs if profile.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists()]
         
         if self.request.user.userstory.filter(created_at__gte = timezone.now() - timezone.timedelta(days=1)).exists():
