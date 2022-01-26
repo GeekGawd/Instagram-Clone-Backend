@@ -1,3 +1,4 @@
+import profile
 from django.template import context
 from core.models import User, Notification
 from django.utils import timezone
@@ -471,3 +472,9 @@ class NotificationView(generics.GenericAPIView, mixins.ListModelMixin, mixins.Re
     
     def post(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+class HomeProfilePictureView(APIView):
+    def get(self, request):
+        profile = request.user.profile
+        return Response({"profile_picture": profile.profile_photo}, status=status.HTTP_200_OK)
+    

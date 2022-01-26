@@ -1,7 +1,7 @@
 from django.urls import path
 from socialuser.models import Comment
 
-from socialuser.views import BookmarkView, CommentCreateView, CreatePostView, FollowRequestView, GetPostFromTagView,\
+from socialuser.views import BookmarkView, CommentCreateView, CreatePostView, FollowRequestView, GetPostFromTagView, HomeProfilePictureView,\
      LikeView, HomePostView, NotificationView, ProfileSearchView, StoryView, TagSearchView,\
     UserProfileAPIView, FollowerCreateView, HomeStoryView, ProfilePostView, GetStoryView
 
@@ -24,4 +24,5 @@ urlpatterns = [
     path('search/profile/', ProfileSearchView.as_view(), name='profile-search'),
     path('profile/bookmark/', BookmarkView.as_view(), name='profile-search'),
     path('profile/notification/', NotificationView.as_view(), name='profile-noti'),
+    path('home/profile-picture/', HomeProfilePictureView.as_view(), name='profile-noti'),
 ]
