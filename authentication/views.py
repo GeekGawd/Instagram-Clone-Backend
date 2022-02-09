@@ -1,46 +1,30 @@
-from rest_framework import generics, serializers, status, authentication, permissions
+from rest_framework import generics, status, mixins
 from core.models import *
 import time, random
 from authentication.serializers import AuthTokenSerializer, ChangePasswordSerializer, UserSerializer
-from django.core.mail import EmailMessage
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import Http404
 from django.contrib.auth.hashers import check_password
-from django.conf import settings
-import json
-        
-class CreateUserView(generics.CreateAPIView):
-    serializer_class = UserSerializer
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import EmailMessage
+from socialuser.models import Profile
 
-class LoginAPIView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request, *args, **kwargs):
-        request_email = request.data.get('email',)
-        try:
-            user1 = User.objects.get(email__iexact = request_email)
-        except: 
-            return Response({'status':'User not registered'}, status=status.HTTP_401_UNAUTHORIZED)
+def send_login_mail(email, subject):
 
-        serializer = AuthTokenSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    OTP.objects.filter(otp_email__iexact = email).delete()
 
-def login_send_otp_email(email,subject="[OTP] New Login for Connect App"):
+    otp = random.randint(100000,999999)
+
+    msg = EmailMessage(subject, f'<div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2"><div style="margin:50px auto;width:70%;padding:20px 0"><div style="border-bottom:1px solid #eee"><a href="" style="font-size:2em;color: #FFD243;text-decoration:none;font-weight:600">Connect</a></div><p style="font-size:1.2em">Greetings,</p><p style="font-size:1.2em"> Thank you for creating an account on Connect. You can count on us for quality, service, and selection. Now, we would not like to hold you up, so use the following OTP to complete your Sign Up procedures and order away.<br><b style="text-align: center;display: block;">Note: OTP is only valid for 5 minutes.</b></p><h2 style="font-size: 1.9em;background: #FFD243;margin: 0 auto;width: max-content;padding: 0 15px;color: #fff;border-radius: 4px;">{otp}</h2><p style="font-size:1.2em;">Regards,<br/>Team Connect</p><hr style="border:none;border-top:1px solid #eee" /><div style="float:right;padding:8px 0;color:#aaa;font-size:1.2em;line-height:1;font-weight:500"><p>Connect</p><p>Boys Hostel, Near Girl Hostel AKGEC</p><p>Ghaziabad</p></div></div></div>', 'swaad.info.contact@gmail.com', (email,))
+    msg.content_subtype = "html"
+    msg.send()
+
+    time_created = int(time.time())
+    OTP.objects.create(otp=otp, otp_email = email, time_created = time_created)
     
-        OTP.objects.filter(otp_email__iexact = email).delete()
-
-        otp = random.randint(100000,999999)
-
-        msg = EmailMessage(subject, f'<div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2"><div style="margin:50px auto;width:70%;padding:20px 0"><div style="border-bottom:1px solid #eee"><a href="" style="font-size:2em;color: #FFD243;text-decoration:none;font-weight:600">Connect</a></div><p style="font-size:1.2em">Greetings,</p><p style="font-size:1.2em"> Thank you for creating an account on Connect. You can count on us for quality, service, and selection. Now, we would not like to hold you up, so use the following OTP to complete your Sign Up procedures and order away.<br><b style="text-align: center;display: block;">Note: OTP is only valid for 5 minutes.</b></p><h2 style="font-size: 1.9em;background: #FFD243;margin: 0 auto;width: max-content;padding: 0 15px;color: #fff;border-radius: 4px;">{otp}</h2><p style="font-size:1.2em;">Regards,<br/>Team Connect</p><hr style="border:none;border-top:1px solid #eee" /><div style="float:right;padding:8px 0;color:#aaa;font-size:1.2em;line-height:1;font-weight:500"><p>Connect</p><p>Boys Hostel, Near Girl Hostel AKGEC</p><p>Ghaziabad</p></div></div></div>', 'swaad.info.contact@gmail.com', (email,))
-        msg.content_subtype = "html"
-        msg.send()
-
-        time_created = int(time.time())
-        OTP.objects.create(otp=otp, otp_email = email, time_created = time_created)
-        
-        return Response({"OTP has been successfully sent to your email."})
+    return
 
 def send_otp_email(email,subject):
     
@@ -55,6 +39,43 @@ def send_otp_email(email,subject):
     time_created = int(time.time())
 
     OTP.objects.create(otp=otp, otp_email = email, time_created = time_created)
+    return
+        
+class CreateUserView(generics.GenericAPIView, mixins.CreateModelMixin):
+    serializer_class = UserSerializer
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        email = request.data.get("email")
+        try:
+            profile = Profile.objects.get(username=username)
+            return Response({"status": "Username already Taken."}, status=status.HTTP_409_CONFLICT)    
+            # else:
+            #     serializer = self.serializer_class(data=request.data)
+            #     if serializer.is_valid(raise_exception=True):
+            #         user = serializer.save()
+            #     profile.user = user
+            #     profile.save()
+            #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ObjectDoesNotExist:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                    user = serializer.save()
+            profile = Profile.objects.create(username=username, user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request, *args, **kwargs):
+        request_email = request.data.get('email',)
+        try:
+            user1 = User.objects.get(email__iexact = request_email)
+        except:
+            return Response({'status':'User not registered'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = AuthTokenSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class PasswordResetOTP(APIView):
     permission_classes = [AllowAny]
@@ -64,11 +85,11 @@ class PasswordResetOTP(APIView):
 
         try:
             user = User.objects.get(email__iexact = request_email)
-        except: 
+        except:
             return Response({"status" : "No such account exists"},status = status.HTTP_400_BAD_REQUEST)
 
         if user.is_active:
-            send_otp_email(email = request_email,subject="[OTP] Password Change for Connect App") 
+            send_otp_email(request_email,"[OTP] Password Change for Connect App")
             return Response({"status" : "OTP has been sent to your email."}, status = status.HTTP_200_OK)
         return Response({"status": "Please verify your account."}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
@@ -95,10 +116,10 @@ class PasswordResetOTPConfirm(APIView):
 
             if str(otp_instance.otp) != str(request_otp):
                  return Response({"status" : "Sorry, entered OTP doesn't match the sent OTP."},status = status.HTTP_409_CONFLICT)
-            
+
             if (request_email != email):
                 return Response({"status" : "Sorry, entered OTP doesn't belong to your email id."},status = status.HTTP_401_UNAUTHORIZED)
-            
+
             return Response({"status": "OTP has been verified."}, status=status.HTTP_200_OK)
 
         return Response({"status": "Please Provide an email address"},status = status.HTTP_400_BAD_REQUEST)
@@ -114,13 +135,13 @@ class SignUpOTP(APIView):
         except:
             if request_email:
                 try:
-                    login_send_otp_email(email=request_email)
+                    send_login_mail(request_email, "[OTP] New Login for Connect App")
                     return Response({'status':'OTP sent successfully.'},status = status.HTTP_200_OK)
                 except:
                     return Response({'status':"Couldn't send otp."}, status = status.HTTP_405_METHOD_NOT_ALLOWED)
             else:
                 return Response({"status":"Please enter an email id"},status = status.HTTP_400_BAD_REQUEST)
-                
+
 class SignUpOTPVerification(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -132,7 +153,7 @@ class SignUpOTPVerification(APIView):
                 otp_instance = OTP.objects.get(otp_email__iexact = request_email)
             except:
                 raise Http404
-            
+
         otp = otp_instance.otp
         email = otp_instance.otp_email
 
@@ -141,7 +162,7 @@ class SignUpOTPVerification(APIView):
 
         if current_time - request_time > 300:
             return Response({"status" : "Sorry, entered OTP has expired."}, status = status.HTTP_403_FORBIDDEN)
-        
+
         if str(request_otp) == str(otp) and request_email == email:
             OTP.objects.filter(otp_email__iexact = request_email).delete()
             return Response({"status": "Email Verified."}, status=status.HTTP_200_OK)
@@ -149,25 +170,35 @@ class SignUpOTPVerification(APIView):
             return Response({
                 'status':'OTP incorrect.'
             }, status=status.HTTP_400_BAD_REQUEST)
-            
+
 class ChangePassword(APIView):
     permission_classes = (AllowAny, )
 
     def patch(self, request, *args, **kwargs):
         request_email = request.data.get('email',)
 
-        try:   
+        try:
             user = User.objects.get(email__iexact = request_email)
         except:
-            return Response({"status": "Given User email is not registered." }, 
+            return Response({"status": "Given User email is not registered." },
                                 status=status.HTTP_403_FORBIDDEN)
         serializer = ChangePasswordSerializer(data=request.data)
 
         if serializer.is_valid():
             if check_password(request.data.get("new_password",), user.password):
-                return Response({"status": "New password cannot be the same as old password." }, 
+                return Response({"status": "New password cannot be the same as old password." },
                                 status=status.HTTP_400_BAD_REQUEST)
             user.set_password(serializer.data.get("new_password"))
             user.save()
             return Response(user.tokens(),status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED) 
+
+class CreateUsername(APIView):
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username",)
+        try:
+            Profile.objects.get(username=username)
+            return Response({"status": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({"username": f"{username}"}, status=status.HTTP_201_CREATED)

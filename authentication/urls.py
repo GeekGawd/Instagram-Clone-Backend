@@ -19,4 +19,6 @@ urlpatterns = [
     path('signup/sendotp/', views.SignUpOTP.as_view(), name = 'sendotp'),
      
     path('changepsw/', views.ChangePassword.as_view(), name='loggedinuser'),
+
+    path('createusername/', views.CreateUsername.as_view(), name='createusername'),
 ]

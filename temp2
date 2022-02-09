@@ -1,0 +1,19 @@
+[Unit]
+Description=Celery Service
+After=network.target
+
+[Service]
+Type=simple
+User=celery
+Group=celery
+
+EnvironmentFile=/etc/default/celeryd
+WorkingDirectory=/home/ubuntu/project/Instagram-Clone-Backend
+ExecStart=pipenv run celery -A instagram.celery worker -l INFO
+ExecStop=pipenv run celery -A instagram.celery control shutdown
+ExecReload=/usr/local/bin/pipenv run celery multi restart ${CELERYD_NODES} \
+  -A ${CELERY_APP} --pidfile=${CELERYD_PID_FILE} \
+  --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS}
+
+[Install]
+WantedBy=multi-user.target
