@@ -59,12 +59,13 @@ class HomePostView(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = PostViewSerializer
 
     def get_queryset(self):
-        posts = []
+        qs = []
         # print(dir(Post.objects.select_related("user")))
         following = Profile.objects.get_following(self.request)
-        qs = Post.objects.filter(user=following[0].user)
-        for follower in following[1:]:
-            qs = qs.union(Post.objects.filter(user=follower.user)).order_by('-created_at')
+        if following:
+            qs = Post.objects.filter(user=following[0].user)
+            for follower in following[1:]:
+                qs = qs.union(Post.objects.filter(user=follower.user)).order_by('-created_at')
         return qs
 
     def get(self, request, *args, **kwargs):

@@ -1,12 +1,13 @@
 from django.conf import settings
 from rest_framework import status
 import jwt
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotAcceptable
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import authentication
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from core.models import User
+from django.core.exceptions import PermissionDenied
 
 class JWTAuthentication(authentication.BaseAuthentication):
 
@@ -26,7 +27,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
             return (user, token)
             
         except jwt.ExpiredSignatureError as e:
-            raise ValidationError({"error": ["Token has Expired"]})
+            raise NotAcceptable("Token has Expired")
 
         except jwt.exceptions.DecodeError as e:
             raise AuthenticationFailed('Invalid Token')
