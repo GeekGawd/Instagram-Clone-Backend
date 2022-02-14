@@ -64,7 +64,7 @@ class Comment(Creatable, Model):
     liked_by = ManyToManyField(
         "core.User", related_name="like_comment", blank=True)
     content = TextField(max_length=250)
-    comment_by = ForeignKey("core.User", on_delete=models.CASCADE)
+    comment_by = ForeignKey("core.User", on_delete=models.CASCADE,related_name="comment_by")
     post = ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True, related_name="postcomments")
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
 

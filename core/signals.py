@@ -36,8 +36,10 @@ def remove_follower(sender, instance, **kwargs):
 #         instance.profile_photo = DEFAULT
 #         instance.save()
 
-@receiver(post_init, sender=Comment)
+@receiver(post_save, sender=Comment)
 def commentNotification(sender,instance, **kwargs):
+    print("debug")
+    print(instance)
     comment = instance.content
     comment_by_profile = Profile.objects.get(user=instance.comment_by)
     post = instance.post
