@@ -44,7 +44,7 @@ def commentNotification(sender,instance, **kwargs):
     if post:
         if post.user != comment_by_profile.user:
             Notification.objects.create(post=post,sender=comment_by_profile.user,
-                                        text=f"{post.user.username} has commented on your post: {comment[:100]}",
+                                        text=f"{comment_by_profile.username} has commented on your post: {comment[:100]}",
                                         user=post.user, noti_type=2)
 
 @receiver(post_delete, sender=Comment)
