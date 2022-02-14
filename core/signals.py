@@ -68,7 +68,8 @@ def likeNotification(sender,**kwargs):
             post=post,
             user=to_user, sender=User.objects.get(id=user),
             text=f"{User.objects.get(id=user).profile.username} liked your post.", noti_type=3
-        ) for user in liked_by_users]
+        ) for user in liked_by_users if to_user.id is not user]
+        print(like_notification)
         Notification.objects.bulk_create(like_notification)
 
 @receiver(m2m_changed, sender=Post.liked_by.through)
