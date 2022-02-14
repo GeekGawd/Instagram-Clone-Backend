@@ -195,6 +195,7 @@ class CommentSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         data = super(CommentSerializer, self).to_representation(instance)
+        data['content'] = f"{instance.comment_by.profile.username}: {instance.content}"
         if instance.parent is not None:
             data.pop('replies')
             data.pop('reply_count')
