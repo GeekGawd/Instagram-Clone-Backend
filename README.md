@@ -6,6 +6,7 @@
 
 - Android (Kotlin) app as the frontend.
 - API Endpoints written in Django and Django Rest Framework, written following the best practices.
+- JWT Authentication with complete integration of Refresh and Access tokens.
 - Dockerise the Django App for easy deployment and testing.
 - Celery for background tasking (Sending Emails in the Backgroud)
 - Redis to act as a broker and task queue
