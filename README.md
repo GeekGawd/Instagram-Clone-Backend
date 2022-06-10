@@ -9,7 +9,7 @@
 - Dockerise the Django App for easy deployment and testing.
 - Celery for background tasking (Sending Emails in the Backgroud)
 - Redis to act as a broker and task queue
-- Was Deployed on AWS EC2 instance.
+- Was Deployed on AWS EC2 instance. (had to disable it for pricing reasons)
 - Used Gunicorn as Forward Proxy
 - Nginx for Reverse Proxy
 - Django Signals for asynchronous programming like Instagram Notifications etc.
