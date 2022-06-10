@@ -91,25 +91,35 @@ WSGI_APPLICATION = 'instagram.wsgi.application'
 
 ON_HEROKU = config("ON_HEROKU", cast=bool)
 
-if ON_HEROKU:
-    DATABASES = {
-        'default': {
-            'ENGINE':'django.db.backends.postgresql_psycopg2',
-        }
-    }
-    import dj_database_url
-    db_from_env = dj_database_url.config(conn_max_age=600)
-    DATABASES['default'].update(db_from_env)
+# if ON_HEROKU:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE':'django.db.backends.postgresql_psycopg2',
+#         }
+#     }
+#     import dj_database_url
+#     db_from_env = dj_database_url.config(conn_max_age=600)
+#     DATABASES['default'].update(db_from_env)
 
-else:
-    DATABASES = {
+# else:
+#     DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config("POSTGRES_NAME"),
+#         'USER': config("POSTGRES_USER"),
+#         'PASSWORD': config("POSTGRES_PASSWORD"),
+#         'HOST': "postgres",
+#         'PORT': config("POSTGRES_PORT"),
+#     }
+# }
+
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config("POSTGRES_NAME"),
-        'USER': config("POSTGRES_USER"),
-        'PASSWORD': config("POSTGRES_PASSWORD"),
-        'HOST': "127.0.0.1",
-        'PORT': config("POSTGRES_PORT"),
+        'HOST': config("POSTGRES_HOST"),
+        'NAME': config('POSTGRES_NAME'),
+        'USER': config('POSTGRES_USER'),
+        'PASSWORD': config('POSTGRES_PASSWORD'),
     }
 }
 

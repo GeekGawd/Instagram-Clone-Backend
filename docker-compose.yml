@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  web:
+    restart: always
+    build: ./
+    ports:
+      - "8000:8000"
+    links:
+      - postgres:postgres
+      - redis:redis
+    env_file: .env
+    environment:
+      DEBUG: 'true'
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+  # nginx:
+  #   restart: always
+  #   build: ./nginx/
+  #   ports:
+  #     - "80:80"
+  #   links:
+  #     - web:web
+
+  postgres:
+    restart: always
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+
+  redis:
+    restart: always
+    image: redis:latest
+    ports:
+      - "6379:6379"
+  celery:
+    restart: always
+    build:
+      context: .
+    command: celery -A instagram.celery worker -l info
