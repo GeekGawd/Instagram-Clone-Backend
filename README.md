@@ -12,7 +12,7 @@
 - Celery for background tasking (Sending Emails in the Backgroud)
 - Redis to act as a broker and task queue
 - Was Deployed on AWS EC2 instance. (had to disable it for pricing reasons)
-- Used Gunicorn as Forward Proxy
+- Used Gunicorn for restarting the server and run the server in prefork model
 - Nginx for Reverse Proxy
 - Django Signals for asynchronous programming like Instagram Notifications etc.
 - Django Websockets used for Instagram Chat.
